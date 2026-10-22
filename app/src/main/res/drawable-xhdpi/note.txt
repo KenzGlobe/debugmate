@@ -1,4 +1,7 @@
-DebugMate
+<!-- DebugMate
+|
+|-- .git
+|   |-- [the files and folders that are under this folder are many for me to write 🥲, i can write it if you insist but i don't think it is important for me to write it]
 |
 |-- app
 |   |-- build
@@ -53,4 +56,4 @@ DebugMate
 |
 |-- build.gradle
 |
-|-- settings.gradle
+|-- settings.gradle -->
