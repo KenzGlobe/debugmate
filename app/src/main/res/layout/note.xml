@@ -1,0 +1,56 @@
+DebugMate
+|
+|-- app
+|   |-- build
+|   |   |-- bin
+|   |   |   |-- [the files and folders that are under this folder are many for me to write 🥲, i can write it if you insist but i don't think it is important for me to write it]
+|   |   |
+|   |   |-- gen
+|   |   |   |-- com
+|   |   |   |   |-- kenzglobe
+|   |   |   |   |   |-- debugmate
+|   |   |   |   |   |   |-- BuildConfig.java
+|   |   |   |   |   |   |-- R.java
+|   |
+|   |-- src
+|   |   |-- main
+|   |   |   |-- java
+|   |   |   |   |-- com
+|   |   |   |   |   |-- kenzglobe
+|   |   |   |   |   |   |-- debugmate
+|   |   |   |   |   |   |   |-- MainActivity.java
+|   |   |   |
+|   |   |   |-- res
+|   |   |   |   |-- drawable-mdpi
+|   |   |   |   |   |-- ic_launcher.png
+|   |   |   |   |
+|   |   |   |   |-- drawable-hdpi
+|   |   |   |   |   |-- ic_launcher.png
+|   |   |   |   |
+|   |   |   |   |-- drawable-xhdpi
+|   |   |   |   |   |-- ic_launcher.png
+|   |   |   |   |
+|   |   |   |   |-- drawable-xxhdpi
+|   |   |   |   |   |-- ic_launcher.png
+|   |   |   |   |
+|   |   |   |   |-- layout
+|   |   |   |   |   |-- main.xml
+|   |   |   |   |
+|   |   |   |   |-- values
+|   |   |   |   |   |-- strings.xml
+|   |   |   |   |   |-- styles.xml
+|   |   |   |   |
+|   |   |   |   |-- values-v21
+|   |   |   |   |   |-- styles.xml
+|   |   |   |
+|   |   |   |-- AndroidManifest.xml
+|   |
+|   |-- build.gradle
+|   |
+|   |-- proguard-rules.pro
+|
+|-- .gitignore
+|
+|-- build.gradle
+|
+|-- settings.gradle
