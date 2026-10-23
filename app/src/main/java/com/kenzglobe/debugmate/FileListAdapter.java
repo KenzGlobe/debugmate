@@ -280,18 +280,18 @@ public class FileListAdapter extends ArrayAdapter<FileItem> {
                     h.icon.setTextColor(Color.parseColor("#ED8B00"));
                     break;
                 case "kt":
-            		    if (brandsRegularFont != null) {
-              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
             		    }
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+                    h.icon.setText("\uf121");
+                    h.icon.setTextColor(Color.parseColor("#7F52FF"));
                     break;
                 case "ts":
-            		    if (brandsRegularFont != null) {
-              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
             		    }
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+                    h.icon.setText("\uf121");
+                    h.icon.setTextColor(Color.parseColor("#3178C6"));
                     break;
                 case "htm":
             		    if (brandsRegularFont != null) {
@@ -315,11 +315,11 @@ public class FileListAdapter extends ArrayAdapter<FileItem> {
                     h.icon.setTextColor(Color.parseColor("#1572B6"));
                     break;
                 case "xml":
-            		    if (brandsRegularFont != null) {
-              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
             		    }
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+                    h.icon.setText("\uf121");
+                    h.icon.setTextColor(Color.parseColor("#E37933"));
                     break;
                 case "json":
             		    if (solidFont != null) {
@@ -329,67 +329,74 @@ public class FileListAdapter extends ArrayAdapter<FileItem> {
                     h.icon.setTextColor(Color.parseColor("#F0A000"));
                     break;
                 case "sh":
-            		    if (brandsRegularFont != null) {
-              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
             		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "bat":
-            		    if (brandsRegularFont != null) {
-              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
             		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "c":
-            		    if (brandsRegularFont != null) {
-              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
             		    }
-                    h.icon.setText("\uf1c9");
+                    h.icon.setText("\uf121");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "cpp":
-            		    if (brandsRegularFont != null) {
-              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
             		    }
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+                    h.icon.setText("\uf121");
+                    h.icon.setTextColor(Color.parseColor("#00599C"));
                     break;
                 case "h":
-            		    if (brandsRegularFont != null) {
-              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
             		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "php":
-            		    if (brandsRegularFont != null) {
-              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
             		    }
-                    h.icon.setText("\uf1c9");
+                    h.icon.setText("\uf121");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "rb":
-            		    if (brandsRegularFont != null) {
-              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
             		    }
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+                    h.icon.setText("\uf121");
+                    h.icon.setTextColor(Color.parseColor("#CC342D"));
                     break;
                 case "go":
-            		    if (brandsRegularFont != null) {
-              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
             		    }
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+                    h.icon.setText("\uf121");
+                    h.icon.setTextColor(Color.parseColor("#00ADD8"));
                     break;
                 case "rs":
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
+                    h.icon.setText("\uf121");
+                    h.icon.setTextColor(Color.parseColor("#DEA584"));
+                    break;
+                case "swift":
             		    if (brandsRegularFont != null) {
               	  	    h.icon.setTypeface(brandsRegularFont);
             		    }
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+                    h.icon.setText("\uf8e1");
+                    h.icon.setTextColor(Color.parseColor("#F05138"));
                     break;
                 case "md":
             		    if (brandsRegularFont != null) {

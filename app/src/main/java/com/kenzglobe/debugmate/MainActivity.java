@@ -191,6 +191,40 @@ public class MainActivity extends Activity {
 			    }
 			}
         });
+        
+		fileListView.setOnItemLongClickListener(new android.widget.AdapterView.OnItemLongClickListener() {
+		    @Override
+		    public boolean onItemLongClick(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
+		        final FileItem item = fileList.get(position);
+		
+		        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+		        builder.setTitle("Delete " + item.name + "?");
+		        builder.setMessage("Are you sure you want to delete this?");
+		
+		        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+		            @Override
+		            public void onClick(DialogInterface dialog, int which) {
+		                if (deleteRecursive(item.file)) {
+		                    Toast.makeText(MainActivity.this, "Deleted successfully! 🗑️", Toast.LENGTH_SHORT).show();
+		                    loadDirectory(currentDirectory);
+		                } else {
+		                    Toast.makeText(MainActivity.this, "Failed to delete. (Folders must be empty to delete)", Toast.LENGTH_LONG).show();
+		                }
+		            }
+		        });
+		
+		        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+		            @Override
+		            public void onClick(DialogInterface dialog, int which) {
+		                dialog.cancel();
+		            }
+		        });
+		
+		        builder.show();
+		        
+		        return true; 
+		    }
+		});
 
         // Check for Permissions
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
@@ -247,6 +281,24 @@ public class MainActivity extends Activity {
              Toast.makeText(this, "Cannot read directory: " + dir.getName(), Toast.LENGTH_LONG).show();
         }
     }
+    
+    private boolean deleteRecursive(File file) {
+	    if (file.isDirectory()) {
+	        File[] children = file.listFiles();
+	
+	        if (children == null) {
+	            return false;
+	        }
+	
+	        for (File child : children) {
+	            if (!deleteRecursive(child)) {
+	                return false;
+	            }
+	        }
+	    }
+	
+	    return file.delete();
+	}
 
     @Override
     public void onBackPressed() {
