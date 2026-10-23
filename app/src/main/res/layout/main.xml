@@ -3,23 +3,36 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#8B5CF6">
+    android:background="#262626">
 
-    <!-- The List of Files -->
+    <!-- Action Bar -->
     <LinearLayout
     	android:layout_width="match_parent"
-    	android:layout_height="60dp"
-    	android:orientation="horizontal"
-    	android:background="#1E1E1E">
+    	android:layout_height="55dp"
+    	android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/side_bar_btn"
+            android:layout_width="55dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="="
+            android:textColor="#8B5CF6"
+            android:textSize="25sp" />
         	
 	</LinearLayout>
+	
+	<View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#777777" />
 
     <!-- The List of Files -->
     <LinearLayout
     	android:layout_width="match_parent"
     	android:layout_height="match_parent"
     	android:orientation="vertical"
-    	android:background="#2E2E2E">
+    	android:background="#262626">
     	
     	<ListView
         	android:id="@+id/file_list"
