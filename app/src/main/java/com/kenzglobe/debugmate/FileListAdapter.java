@@ -11,17 +11,17 @@ import android.widget.TextView;
 import java.util.List;
 
 public class FileListAdapter extends ArrayAdapter<FileItem> {
-
-    // Load the font ONCE here, so it doesn't lag the app
-    private Typeface font;
+    private Typeface solidFont, brandsRegularFont;
 
     public FileListAdapter(Context ctx, List<FileItem> list){
         super(ctx, R.layout.item_file, list);
-        // Initialize the font here
+        
         try {
-            this.font = Typeface.createFromAsset(ctx.getAssets(), "fonts/fa-solid-900-v5.ttf");
+            this.solidFont = Typeface.createFromAsset(ctx.getAssets(), "fonts/fa-solid-900-v5.ttf");
+            this.brandsRegularFont = Typeface.createFromAsset(ctx.getAssets(), "fonts/fa-brands-regular-400-v5.ttf");
         } catch (Exception e) {
-            this.font = null;
+            this.solidFont = null;
+            this.brandsRegularFont = null;
         }
     }
 
@@ -49,8 +49,8 @@ public class FileListAdapter extends ArrayAdapter<FileItem> {
         h.name.setText(item.name);
 
         if(item.isDir){
-            if (font != null) {
-                h.icon.setTypeface(font);
+            if (solidFont != null) {
+                h.icon.setTypeface(solidFont);
             }
             h.icon.setText("\uf07b");
             h.icon.setTextColor(Color.parseColor("#8B5CF6"));
@@ -60,199 +60,355 @@ public class FileListAdapter extends ArrayAdapter<FileItem> {
         } else {
             h.info.setText(item.ext.toUpperCase() + " file");
             h.size.setText(formatSize(item.file.length()));
-            if (font != null) {
-                h.icon.setTypeface(font);
-            }
             
             switch(item.ext) {
-                case "html":
-                    h.icon.setText("\uf1c9");
-                    break;
                 case "txt":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf15c");
                     h.icon.setTextColor(Color.parseColor("#FFDC5F"));
                     break;
                 case "apk":
-                    h.icon.setText("\uf1c6");
+                    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
+                    h.icon.setText("\uf17b");
                     h.icon.setTextColor(Color.parseColor("#43FF8D"));
                     break;
                 case "aac":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf001");
                     h.icon.setTextColor(Color.parseColor("#698CB7"));
                     break;
                 case "mp3":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf001");
                     h.icon.setTextColor(Color.parseColor("#698CB7"));
                     break;
                 case "wav":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf001");
                     h.icon.setTextColor(Color.parseColor("#698CB7"));
                     break;
                 case "ogg":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf001");
                     h.icon.setTextColor(Color.parseColor("#698CB7"));
                     break;
                 case "m4a":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf001");
                     h.icon.setTextColor(Color.parseColor("#698CB7"));
                     break;
                 case "mp4":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf03d");
                     h.icon.setTextColor(Color.parseColor("#00B79E"));
                     break;
                 case "mkv":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf008");
                     h.icon.setTextColor(Color.parseColor("#00B79E"));
                     break;
                 case "avi":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf03d");
                     h.icon.setTextColor(Color.parseColor("#00B79E"));
                     break;
+                case "svg":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
+                    h.icon.setText("\uf03e");
+                    h.icon.setTextColor(Color.parseColor("#72F3FF"));
+                    break;
                 case "png":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf03e");
                     h.icon.setTextColor(Color.parseColor("#72F3FF"));
                     break;
                 case "jpg":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf03e");
                     h.icon.setTextColor(Color.parseColor("#72F3FF"));
                     break;
                 case "jpeg":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf03e");
                     h.icon.setTextColor(Color.parseColor("#72F3FF"));
                     break;
                 case "gif":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf03e");
                     h.icon.setTextColor(Color.parseColor("#72F3FF"));
                     break;
                 case "webp":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf03e");
                     h.icon.setTextColor(Color.parseColor("#72F3FF"));
                     break;
                 case "pdf":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c1");
                     h.icon.setTextColor(Color.parseColor("#FF5F5B"));
                     break;
                 case "doc":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c2");
                     h.icon.setTextColor(Color.parseColor("#40A3FF"));
                     break;
                 case "docx":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c2");
                     h.icon.setTextColor(Color.parseColor("#40A3FF"));
                     break;
                 case "xls":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c3");
                     h.icon.setTextColor(Color.parseColor("#CFFF50"));
                     break;
                 case "xlsx":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c3");
                     h.icon.setTextColor(Color.parseColor("#CFFF50"));
                     break;
                 case "ppt":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c4");
                     h.icon.setTextColor(Color.parseColor("#FFB074"));
                     break;
                 case "pptx":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c4");
                     h.icon.setTextColor(Color.parseColor("#FF7E46"));
                     break;
                 case "zip":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c6");
                     h.icon.setTextColor(Color.parseColor("#9AD39F"));
                     break;
                 case "rar":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c6");
                     h.icon.setTextColor(Color.parseColor("#9AD39F"));
                     break;
                 case "7z":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c6");
                     h.icon.setTextColor(Color.parseColor("#9AD39F"));
                     break;
                 case "tar":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c6");
                     h.icon.setTextColor(Color.parseColor("#9AD39F"));
                     break;
                 case "gz":
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf1c6");
                     h.icon.setTextColor(Color.parseColor("#9AD39F"));
                     break;
                 case "py":
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
+                    h.icon.setText("\uf3e2");
+                    h.icon.setTextColor(Color.parseColor("#3776AB"));
                     break;
                 case "js":
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
+                    h.icon.setText("\uf3b8");
+                    h.icon.setTextColor(Color.parseColor("#FFFF00"));
                     break;
                 case "java":
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
+                    h.icon.setText("\uf4e4");
+                    h.icon.setTextColor(Color.parseColor("#ED8B00"));
                     break;
                 case "kt":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "ts":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "htm":
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
+                    h.icon.setText("\uf13b");
+                    h.icon.setTextColor(Color.parseColor("#FF8800"));
                     break;
                 case "html":
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
+                    h.icon.setText("\uf13b");
+                    h.icon.setTextColor(Color.parseColor("#FF8800"));
                     break;
                 case "css":
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
+                    h.icon.setText("\uf13c");
+                    h.icon.setTextColor(Color.parseColor("#1572B6"));
                     break;
                 case "xml":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "json":
-                    h.icon.setText("\uf1c9");
-                    h.icon.setTextColor(Color.parseColor("#8B5CF6"));
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
+                    h.icon.setText("\uf121");
+                    h.icon.setTextColor(Color.parseColor("#F0A000"));
                     break;
                 case "sh":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "bat":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "c":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "cpp":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "h":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "php":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "rb":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "go":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
                 case "rs":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
                     h.icon.setText("\uf1c9");
                     h.icon.setTextColor(Color.parseColor("#8B5CF6"));
                     break;
+                case "md":
+            		    if (brandsRegularFont != null) {
+              	  	    h.icon.setTypeface(brandsRegularFont);
+            		    }
+                    h.icon.setText("\uf60f");
+                    h.icon.setTextColor(Color.parseColor("#608080"));
+                    break;
+                case "gradle":
+            		    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
+                    h.icon.setText("\uf7d9");
+                    h.icon.setTextColor(Color.parseColor("#608080"));
+                    break;
                 default:
+                    if (solidFont != null) {
+              	  	    h.icon.setTypeface(solidFont);
+            		    }
                     h.icon.setText("\uf15b");
                     h.icon.setTextColor(Color.parseColor("#999999"));
                     break;
