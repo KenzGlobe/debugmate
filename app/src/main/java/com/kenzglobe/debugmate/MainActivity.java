@@ -24,7 +24,7 @@ public class MainActivity extends Activity {
     private ListView fileListView;
     private ArrayList<FileItem> fileList;
     private FileListAdapter adapter;
-    private TextView sideBarBtn, createFolderBtn, createFileBtn;
+    private TextView sideBarBtn, createFolderBtn, createFileBtn, terminalBtn;
     private File currentDirectory; 
 
     @Override
@@ -44,6 +44,7 @@ public class MainActivity extends Activity {
         sideBarBtn = findViewById(R.id.side_bar_btn);
         createFolderBtn = findViewById(R.id.create_folder_btn);
         createFileBtn = findViewById(R.id.create_file_btn);
+        terminalBtn = findViewById(R.id.terminal_btn);
 
 		Typeface solidFont = Typeface.createFromAsset(getAssets(), "fonts/fa-solid-900-v5.ttf");
 		Typeface brandsRegularFont = Typeface.createFromAsset(getAssets(), "fonts/fa-brands-regular-400-v5.ttf");
@@ -54,6 +55,8 @@ public class MainActivity extends Activity {
 		createFolderBtn.setText("\uf65e");
 		createFileBtn.setTypeface(solidFont);
 		createFileBtn.setText("\uf067");
+		terminalBtn.setTypeface(solidFont);
+		terminalBtn.setText("\uf120");
 
         fileListView = findViewById(R.id.file_list);
         fileList = new ArrayList<>();
@@ -167,6 +170,14 @@ public class MainActivity extends Activity {
 		              builder.show();
 			}
 		});
+		
+		terminalBtn.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				android.content.Intent intent = new android.content.Intent(MainActivity.this, TerminalActivity.class);
+				startActivity(intent);
+			}
+		});
 
         fileListView.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {
             @Override
@@ -182,12 +193,44 @@ public class MainActivity extends Activity {
 			        boolean textFiles = ext.equals("py") || ext.equals("java") || ext.equals("xml") || ext.equals("txt") || ext.equals("md") || ext.equals("js") || ext.equals("json") || ext.equals("html") || ext.equals("css");
 			        
 			        if (textFiles) {
-			            android.content.Intent intent = new android.content.Intent(MainActivity.this, EditorActivity.class);
-			            intent.putExtra("file_path", filePath);
-			            startActivity(intent);
-			        } else {
-			            Toast.makeText(MainActivity.this, "Feature not available yet.", Toast.LENGTH_LONG).show();
-			        }
+					    // SAVE TO RECENT FILES
+					    android.content.SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+					    String recentStr = prefs.getString("recent_files", "");
+					    ArrayList<String> recentList = new ArrayList<>();
+					    
+					    // Split existing string by newline, if it's not empty
+					    if (!recentStr.isEmpty()) {
+					        String[] arr = recentStr.split("\n");
+					        for (String s : arr) recentList.add(s);
+					    }
+					    
+					    // Remove if it already exists (so we move it to the front)
+					    while (recentList.contains(filePath)) {
+					        recentList.remove(filePath);
+					    }
+					    
+					    // Add to the top of the list
+					    recentList.add(0, filePath);
+					    
+					    // Limit to 20 files
+					    while (recentList.size() > 20) {
+					        recentList.remove(recentList.size() - 1);
+					    }
+					    
+					    // Join back to string and save
+					    StringBuilder sb = new StringBuilder();
+					    for (String s : recentList) {
+					        sb.append(s).append("\n");
+					    }
+					    prefs.edit().putString("recent_files", sb.toString().trim()).apply();
+					
+					    // Launch Editor
+					    android.content.Intent intent = new android.content.Intent(MainActivity.this, EditorActivity.class);
+					    intent.putExtra("file_path", filePath);
+					    startActivity(intent);
+					} else {
+					    Toast.makeText(MainActivity.this, "Feature not available yet.", Toast.LENGTH_LONG).show();
+					}
 			    }
 			}
         });
@@ -198,30 +241,23 @@ public class MainActivity extends Activity {
 		        final FileItem item = fileList.get(position);
 		
 		        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-		        builder.setTitle("Delete " + item.name + "?");
-		        builder.setMessage("Are you sure you want to delete this?");
-		
-		        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+		        builder.setTitle("Options for " + item.name);
+		        
+		        // This creates a popup menu with two options
+		        builder.setItems(new CharSequence[]{"Rename", "Delete"}, new DialogInterface.OnClickListener() {
 		            @Override
 		            public void onClick(DialogInterface dialog, int which) {
-		                if (deleteRecursive(item.file)) {
-		                    Toast.makeText(MainActivity.this, "Deleted successfully! 🗑️", Toast.LENGTH_SHORT).show();
-		                    loadDirectory(currentDirectory);
-		                } else {
-		                    Toast.makeText(MainActivity.this, "Failed to delete. (Folders must be empty to delete)", Toast.LENGTH_LONG).show();
+		                if (which == 0) {
+		                    // User tapped "Rename"
+		                    showRenameDialog(item);
+		                } else if (which == 1) {
+		                    // User tapped "Delete"
+		                    showDeleteDialog(item);
 		                }
 		            }
 		        });
 		
-		        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-		            @Override
-		            public void onClick(DialogInterface dialog, int which) {
-		                dialog.cancel();
-		            }
-		        });
-		
 		        builder.show();
-		        
 		        return true; 
 		    }
 		});
@@ -298,6 +334,81 @@ public class MainActivity extends Activity {
 	    }
 	
 	    return file.delete();
+	}
+	
+	private void showRenameDialog(final FileItem item) {
+	    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+	    builder.setTitle("Rename");
+	
+	    final EditText input = new EditText(MainActivity.this);
+	    input.setText(item.name); // Pre-fill with the current name
+	    input.setSelection(input.getText().length()); // Put the cursor at the very end
+	    input.setPadding(40, 40, 40, 40); 
+	    builder.setView(input);
+	
+	    builder.setPositiveButton("Rename", new DialogInterface.OnClickListener() {
+	        @Override
+	        public void onClick(DialogInterface dialog, int which) {
+	            String newName = input.getText().toString().trim();
+	            
+	            if (newName.isEmpty()) {
+	                Toast.makeText(MainActivity.this, "Name cannot be empty.", Toast.LENGTH_SHORT).show();
+	                return;
+	            }
+	
+	            // Don't do anything if the name hasn't changed
+	            if (newName.equals(item.name)) {
+	                return;
+	            }
+	
+	            // Create the new file object
+	            File newFile = new File(currentDirectory, newName);
+	
+	            // renameTo() returns true if successful
+	            if (item.file.renameTo(newFile)) {
+	                Toast.makeText(MainActivity.this, "Renamed successfully! ✏️", Toast.LENGTH_SHORT).show();
+	                loadDirectory(currentDirectory); 
+	            } else {
+	                Toast.makeText(MainActivity.this, "Rename failed. File might already exist.", Toast.LENGTH_LONG).show();
+	            }
+	        }
+	    });
+	
+	    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+	        @Override
+	        public void onClick(DialogInterface dialog, int which) {
+	            dialog.cancel();
+	        }
+	    });
+	
+	    builder.show();
+	}
+	
+	private void showDeleteDialog(final FileItem item) {
+	    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+	    builder.setTitle("Delete " + item.name + "?");
+	    builder.setMessage("Are you sure you want to delete this?");
+	
+	    builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+	        @Override
+	        public void onClick(DialogInterface dialog, int which) {
+	            if (deleteRecursive(item.file)) {
+	                Toast.makeText(MainActivity.this, "Deleted successfully! 🗑️", Toast.LENGTH_SHORT).show();
+	                loadDirectory(currentDirectory);
+	            } else {
+	                Toast.makeText(MainActivity.this, "Failed to delete.", Toast.LENGTH_LONG).show();
+	            }
+	        }
+	    });
+	
+	    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+	        @Override
+	        public void onClick(DialogInterface dialog, int which) {
+	            dialog.cancel();
+	        }
+	    });
+	
+	    builder.show();
 	}
 
     @Override
