@@ -35,7 +35,7 @@
 		        android:layout_height="wrap_content"
 		        android:text="filename.java"
 		        android:textColor="#FFFFFF"
-		        android:textSize="15sp"
+		        android:textSize="14.5sp"
 		        android:textStyle="bold"
 		        android:singleLine="true"
 		        android:ellipsize="end"
@@ -48,7 +48,7 @@
 		        android:layout_height="wrap_content"
 		        android:text="No file path."
 		        android:textColor="#DFDFDF"
-		        android:textSize="11sp"
+		        android:textSize="10sp"
 		        android:singleLine="true"
 		        android:ellipsize="end"
 		        android:layout_marginStart="8dp" />
@@ -72,38 +72,88 @@
         android:background="#DDDDDD" />
 
     <!-- TAB BAR -->
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#262626"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:id="@+id/tab_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal" />
-    </HorizontalScrollView>
+    
+	<LinearLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="40dp"
+	    android:orientation="horizontal"
+	    android:background="#262626"
+	    android:gravity="center_vertical">
 	
-	<View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#202020" />
+	    <TextView
+	        android:id="@+id/side_bar"
+	        android:layout_width="40dp"
+	        android:layout_height="match_parent"
+	        android:background="@drawable/sidebar_bg"
+	        android:gravity="center"
+	        android:textColor="#FFFFFF"
+	        android:textSize="20sp" />
+	    
+	    <HorizontalScrollView
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:paddingLeft="5dp"
+	        android:paddingVertical="5dp"
+	        android:scrollbars="none">
+	
+	        <LinearLayout
+	            android:id="@+id/tab_container"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:orientation="horizontal" />
+	            
+	    </HorizontalScrollView>
+	    
+	</LinearLayout>
 
-    <!-- The Code Area -->
-	<EditText
-	    android:id="@+id/code_editor"
+    <!-- The Code Area with Line Numbers -->
+	<LinearLayout
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"
-	    android:background="#262626"
-	    android:gravity="top|start"
-	    android:inputType="textMultiLine|textNoSuggestions"
-	    android:imeOptions="flagNoExtractUi"
-	    android:padding="12dp"
-	    android:textColor="#FFFFFF"
-	    android:textSize="14sp"
-	    android:fontFamily="monospace"
-	    android:scrollbars="horizontal|vertical"
-	    android:scrollHorizontally="true" />
+	    android:orientation="horizontal"
+	    android:background="#262626">
+	
+	    <!-- Line Numbers with ScrollView -->
+		<ScrollView
+		    android:id="@+id/scroll_numbers"
+		    android:layout_width="wrap_content"
+		    android:layout_height="match_parent"
+		    android:scrollbars="none"
+		    android:focusable="false"
+		    android:focusableInTouchMode="false">
+		    
+		    <TextView
+		        android:id="@+id/line_numbers"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:background="#1A1A1A"
+		        android:paddingLeft="8dp"
+		        android:paddingRight="8dp"
+		        android:gravity="top|end"
+		        android:textColor="#8B5CF6"
+		        android:textSize="10sp"
+		        android:fontFamily="monospace"
+		        android:text="1\n" />
+		        
+		</ScrollView>
+	
+	    <!-- The Code Editor -->
+	    <EditText
+	        android:id="@+id/code_editor"
+	        android:layout_width="0dp"
+	        android:layout_height="match_parent"
+	        android:layout_weight="1"
+	        android:background="@null"
+	        android:gravity="top|start"
+	        android:inputType="textMultiLine|textNoSuggestions"
+	        android:imeOptions="flagNoExtractUi"
+	        android:paddingLeft="2dp"
+	        android:textColor="#FFFFFF"
+	        android:textSize="10sp"
+	        android:fontFamily="monospace"
+	        android:scrollbars="horizontal|vertical"
+	        android:scrollHorizontally="true" />
+	        
+	</LinearLayout>
 
 </LinearLayout>

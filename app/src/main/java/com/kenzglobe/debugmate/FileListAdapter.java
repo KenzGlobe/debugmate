@@ -11,12 +11,13 @@ import android.widget.TextView;
 import java.util.List;
 
 public class FileListAdapter extends ArrayAdapter<FileItem> {
-    private Typeface solidFont, brandsRegularFont;
+    private Typeface customFont, solidFont, brandsRegularFont;
 
     public FileListAdapter(Context ctx, List<FileItem> list){
         super(ctx, R.layout.item_file, list);
         
         try {
+            this.customFont = Typeface.createFromAsset(ctx.getAssets(), "fonts/SpaceMono-Regular.ttf");
             this.solidFont = Typeface.createFromAsset(ctx.getAssets(), "fonts/fa-solid-900-v5.ttf");
             this.brandsRegularFont = Typeface.createFromAsset(ctx.getAssets(), "fonts/fa-brands-regular-400-v5.ttf");
         } catch (Exception e) {
@@ -47,6 +48,9 @@ public class FileListAdapter extends ArrayAdapter<FileItem> {
 
         FileItem item = getItem(pos);
         h.name.setText(item.name);
+        h.name.setTypeface(customFont);
+        h.info.setTypeface(customFont);
+        h.size.setTypeface(customFont);
 
         if(item.isDir){
             if (solidFont != null) {

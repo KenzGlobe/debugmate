@@ -1,84 +1,639 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#8B5CF6">
+    android:layout_height="match_parent">
 
-    <!-- Action Bar -->
+    <!-- ========================================== -->
+    <!-- MAIN SCREEN CONTENT (The File Manager)     -->
+    <!-- ========================================== -->
     <LinearLayout
-    	android:layout_width="match_parent"
-    	android:layout_height="55dp"
-    	android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/side_bar_btn"
-            android:layout_width="55dp"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:textColor="#FFFFFF"
-            android:textSize="22sp" />
-        	
-	</LinearLayout>
-	
-	<View
         android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#DDDDDD" />
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#8B5CF6">
 
+        <!-- Action Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/side_bar_btn"
+                android:layout_width="55dp"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp" />
+
+            <TextView
+                android:id="@+id/app_name"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:text="DebugMate"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp" />
+
+        </LinearLayout>
+        
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDDDDD" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#262626">
+
+            <!-- Welcome Screen (Visible when no folder is selected) -->
+            <TextView
+                android:id="@+id/welcome_message"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:padding="32dp"
+                android:text="Welcome to DebugMate\n\nOpen the sidebar to load Phone Storage or Projects."
+                android:textColor="#888888"
+                android:textSize="16sp"
+                android:lineSpacingExtra="8dp" />
+
+            <!-- The List of Files (Hidden until a folder is opened) -->
+            <ListView
+                android:id="@+id/file_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+                
+            <!-- Floating Action Button for Plus Icon -->
+            <TextView
+                android:id="@+id/fab_add"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="24dp"
+                android:background="@drawable/fab_bg"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:elevation="6dp" /><!-- OVERLAY POPUP -->
+
+            <FrameLayout
+                android:id="@+id/start_up_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                android:elevation="10dp">
+            
+                <!-- Dim Background -->
+                <View
+                    android:id="@+id/popup_dim_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#80000000" />
+
+                <LinearLayout
+                    android:layout_width="280dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@drawable/start_up_layout"
+                    android:orientation="vertical">
+            
+                    <TextView
+                        android:id="@+id/have_a_project"
+                        android:layout_width="match_parent"
+                        android:layout_height="35dp"
+                        android:gravity="center_vertical"
+                        android:paddingStart="12dp"
+                        android:text="Have a project?"
+                        android:textColor="#8B5CF6"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#333333" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/create_project_icon"
+                            android:layout_width="40dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:textColor="#AAAAAA"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:id="@+id/create_project_btn"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center_vertical"
+                            android:text="Create Project"
+                            android:textColor="#AAAAAA"
+                            android:textSize="16sp" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/import_project_icon"
+                            android:layout_width="40dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:textColor="#AAAAAA"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:id="@+id/import_project_btn"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center_vertical"
+                            android:text="Import Project"
+                            android:textColor="#AAAAAA"
+                            android:textSize="16sp" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/clone_from_git_icon"
+                            android:layout_width="40dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:textColor="#AAAAAA"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:id="@+id/clone_from_git_btn"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center_vertical"
+                            android:text="Clone from Git"
+                            android:textColor="#AAAAAA"
+                            android:textSize="16sp" />
+
+                    </LinearLayout>
+                
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#333333" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/create_folder_btn"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:textColor="#AAAAAA"
+                            android:textSize="20sp" />
+
+                        <TextView
+                            android:id="@+id/create_file_btn"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:textColor="#AAAAAA"
+                            android:textSize="20sp" />
+
+                    </LinearLayout>
+            
+                </LinearLayout>
+                
+            </FrameLayout>
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <!-- ========================================== -->
+    <!-- THE NAVIGATION DRAWER                      -->
+    <!-- ========================================== -->
     <LinearLayout
-    	android:layout_width="match_parent"
-    	android:layout_height="45dp"
-    	android:orientation="horizontal"
-    	android:background="#262626">
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="#262626"
+        android:orientation="vertical">
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="#8B5CF6"
+            android:orientation="vertical">
+            
+            <TextView
+                android:id="@+id/nav_bar_app_name"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginStart="10dp"
+                android:gravity="center_vertical"
+                android:text="DebugMate"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp" />
 
-        <TextView
-            android:id="@+id/create_folder_btn"
-            android:layout_width="45dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:textColor="#AAAAAA"
-            android:textSize="20sp" />
+        </LinearLayout>
+        
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#888888" />
+        
+        <!-- SECTION 1: Files Manager -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            
+            <TextView
+                android:id="@+id/nav_bar_section_one"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginStart="10dp"
+                android:gravity="center_vertical"
+                android:text="Files Manager"
+                android:textColor="#8B5CF6"
+                android:textSize="15sp" />
+        
+            <LinearLayout
+                android:id="@+id/nav_item_file_manager"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_file_manager"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <TextView
+                    android:id="@+id/nav_file_manager"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="Phone Storage"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+        
+            <LinearLayout
+                android:id="@+id/nav_item_projects"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_projects"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <TextView
+                    android:id="@+id/nav_projects"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="Projects"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+            
+        </LinearLayout>
+        
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#333333" />
+        
+        <!-- SECTION 2: Shell -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            
+            <TextView
+                android:id="@+id/nav_bar_section_two"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginStart="10dp"
+                android:gravity="center_vertical"
+                android:text="Shell"
+                android:textColor="#8B5CF6"
+                android:textSize="15sp" />
+        
+            <LinearLayout
+                android:id="@+id/nav_item_terminal"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_terminal"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <TextView
+                    android:id="@+id/nav_terminal"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="Terminal"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+        
+            <LinearLayout
+                android:id="@+id/nav_item_console"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_console"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <TextView
+                    android:id="@+id/nav_console"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="Console"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
 
-        <TextView
-            android:id="@+id/create_file_btn"
-            android:layout_width="45dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:textColor="#AAAAAA"
-            android:textSize="20sp" />
-
-        <TextView
-            android:id="@+id/terminal_btn"
-            android:layout_width="45dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:textColor="#AAAAAA"
-            android:textSize="20sp" />
-        	
-	</LinearLayout>
-	
-	<View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#202020" />
-
-    <!-- The List of Files -->
-    <LinearLayout
-    	android:layout_width="match_parent"
-    	android:layout_height="match_parent"
-    	android:orientation="vertical"
-    	android:background="#262626">
-    	
-    	<ListView
-        	android:id="@+id/file_list"
-        	android:layout_width="match_parent"
-        	android:layout_height="0dp"
-        	android:layout_weight="1" />
-        	
-	</LinearLayout>
-
-</LinearLayout>
+            <LinearLayout
+                android:id="@+id/nav_item_workspace"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_workspace"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <TextView
+                    android:id="@+id/nav_workspace"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="Workspace"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+            
+        </LinearLayout>
+        
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#333333" />
+        
+        <!-- SECTION 3: Learn -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            
+            <TextView
+                android:id="@+id/nav_bar_section_three"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginStart="10dp"
+                android:gravity="center_vertical"
+                android:text="Learn"
+                android:textColor="#8B5CF6"
+                android:textSize="15sp" />
+        
+            <LinearLayout
+                android:id="@+id/nav_item_learn"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_learn"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <TextView
+                    android:id="@+id/nav_learn"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="Learn Hub"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+        
+            <LinearLayout
+                android:id="@+id/nav_item_cheatsheets"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_cheatsheets"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <TextView
+                    android:id="@+id/nav_cheatsheets"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="Cheat Sheets"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+            
+        </LinearLayout>
+        
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#333333" />
+        
+        <!-- SECTION 4: Settings -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            
+            <TextView
+                android:id="@+id/nav_bar_section_four"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginStart="10dp"
+                android:gravity="center_vertical"
+                android:text="Settings"
+                android:textColor="#8B5CF6"
+                android:textSize="15sp" />
+        
+            <LinearLayout
+                android:id="@+id/nav_item_app_settings"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_app_settings"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <TextView
+                    android:id="@+id/nav_app_settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="App Settings"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+        
+            <LinearLayout
+                android:id="@+id/nav_item_editor_settings"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_editor_settings"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <TextView
+                    android:id="@+id/nav_editor_settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="Editor Settings"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+        
+            <LinearLayout
+                android:id="@+id/nav_item_terminal_settings"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_terminal_settings"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <TextView
+                    android:id="@+id/nav_terminal_settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="Terminal Settings"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+            
+        </LinearLayout>
+        
+    </LinearLayout>
+    
+</android.support.v4.widget.DrawerLayout>

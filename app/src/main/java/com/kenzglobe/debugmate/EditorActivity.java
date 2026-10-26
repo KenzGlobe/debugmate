@@ -6,14 +6,18 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.Spanned;
 import android.text.TextWatcher;
 import android.text.style.ForegroundColorSpan;
-import android.view.Gravity;
 import android.view.View;
+import android.view.Gravity;
+import android.view.MotionEvent;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.io.BufferedReader;
@@ -31,16 +35,32 @@ public class EditorActivity extends Activity {
 
     private File currentFile;
     private EditText codeEditor;
-    private Typeface codeFont, solidFont;
-    private TextView fileNameView, fileNamePath, btnSave, btnBack;
+    private Typeface appFont, codeFont, solidFont;
+    private ScrollView scrollNumbers;
+    private TextView fileNameView, fileNamePath, sideBarBtn, lineNumbersView, btnSave, btnBack;
     private LinearLayout tabContainer;
 
-    // Syntax Highlighting Colors
-    private final int COLOR_KEYWORD = Color.parseColor("#C586C0"); // Purple
-    private final int COLOR_STRING = Color.parseColor("#CE9178");  // Orange
-    private final int COLOR_COMMENT = Color.parseColor("#6A9955"); // Green
-    private final int COLOR_NUMBER = Color.parseColor("#B5CEA8");  // Light Green
-    private final int COLOR_XML_TAG = Color.parseColor("#569CD6"); // Blue
+    private final int COLOR_KEYWORD = Color.parseColor("#569CD6");
+    private final int COLOR_STRING = Color.parseColor("#CE9178");
+    private final int COLOR_COMMENT = Color.parseColor("#555555");
+    private final int COLOR_NUMBER = Color.parseColor("#B5CEA8");
+    private final int COLOR_TYPE = Color.parseColor("#4EC9B0");
+    private final int COLOR_METHOD = Color.parseColor("#DCDCAA");
+    private final int COLOR_ANNOTATION = Color.parseColor("#DCDCAA");
+    private final int COLOR_CONSTANT = Color.parseColor("#4FC1FF");
+    private final int COLOR_OPERATOR = Color.parseColor("#D4D4D4");
+    private final int COLOR_CHARACTER = Color.parseColor("#CE9178");
+    private final int COLOR_BRACKET = Color.parseColor("#FFD700");
+    private final int COLOR_XML_TAG = Color.parseColor("#569CD6");
+    
+    // DEBOUNCE HANDLER
+    private Handler highlightHandler = new Handler(Looper.getMainLooper());
+    private Runnable highlightRunnable = new Runnable() {
+        @Override
+        public void run() {
+            applySyntaxHighlighting(codeEditor.getText());
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,26 +72,72 @@ public class EditorActivity extends Activity {
             getWindow().getDecorView().setSystemUiVisibility(0);
         }
 
-        if (getActionBar() != null) getActionBar().hide();
+        if (getActionBar() != null) {
+            getActionBar().hide();
+        }
         
+        appFont = Typeface.createFromAsset(getAssets(), "fonts/SpaceMono-Bold.ttf");
         codeFont = Typeface.createFromAsset(getAssets(), "fonts/FiraCode-Regular.ttf");
         solidFont = Typeface.createFromAsset(getAssets(), "fonts/fa-solid-900-v5.ttf");
 
         fileNameView = findViewById(R.id.editor_file_name);
         fileNamePath = findViewById(R.id.editor_file_path);
+        sideBarBtn = findViewById(R.id.side_bar);
+        scrollNumbers = findViewById(R.id.scroll_numbers);
+        lineNumbersView = findViewById(R.id.line_numbers);
         codeEditor = findViewById(R.id.code_editor);
         btnSave = findViewById(R.id.btn_save);
         btnBack = findViewById(R.id.btn_back);
         tabContainer = findViewById(R.id.tab_container);
         
+        fileNameView.setTypeface(appFont);
+        fileNamePath.setTypeface(appFont);
         codeEditor.setTypeface(codeFont);
-        codeEditor.setHorizontallyScrolling(true); // Stop word wrap
+        codeEditor.setHorizontallyScrolling(true);
+        lineNumbersView.setTypeface(codeFont);
+        
+        sideBarBtn.setTypeface(solidFont);
+        sideBarBtn.setText("\uf0c9");
+        
         btnSave.setTypeface(solidFont);
-        btnSave.setText("\uf0c7");
+        btnSave.setText("\uf142");
+        
         btnBack.setTypeface(solidFont);
         btnBack.setText("\uf060");
 
-        // ADD THE TEXT WATCHER FOR SYNTAX HIGHLIGHTING
+        // Sync the vertical scroll of the line numbers with the code editor
+        codeEditor.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+            @Override
+            public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+                scrollNumbers.scrollTo(0, scrollY);
+            }
+        });
+
+        // FIX THE SNAPPING CURSOR BUG
+        // This intercepts swipes so the cursor doesn't drag the view back
+        codeEditor.setOnTouchListener(new View.OnTouchListener() {
+            private float startX, startY;
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    startX = event.getX();
+                    startY = event.getY();
+                } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                    float dx = Math.abs(event.getX() - startX);
+                    float dy = Math.abs(event.getY() - startY);
+                    if (dx > 15 || dy > 15) {
+                        // If it's a swipe, clear focus to stop the cursor snap back
+                        v.clearFocus();
+                    }
+                } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                    // Give focus back when the user stops swiping
+                    v.requestFocus();
+                }
+                return false;
+            }
+        });
+
+        // ADD THE TEXT WATCHER FOR SYNTAX HIGHLIGHTING (DEBOUNCED)
         codeEditor.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -81,8 +147,12 @@ public class EditorActivity extends Activity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                // Call the highlighter every time the user types
-                applySyntaxHighlighting(s);
+                updateLineNumbers(); 
+                
+                // Remove any pending highlight jobs
+                highlightHandler.removeCallbacks(highlightRunnable);
+                // Wait 300ms after the user stops typing, then highlight
+                highlightHandler.postDelayed(highlightRunnable, 300);
             }
         });
 
@@ -128,14 +198,19 @@ public class EditorActivity extends Activity {
             StringBuilder text = new StringBuilder();
             BufferedReader br = new BufferedReader(new FileReader(currentFile));
             String line;
+            
             while ((line = br.readLine()) != null) {
                 text.append(line);
                 text.append('\n');
             }
             br.close();
             
-            // Setting the text will automatically trigger the TextWatcher and highlight it!
             codeEditor.setText(text.toString());
+            updateLineNumbers(); 
+            
+            // Force an immediate highlight when opening a new file
+            highlightHandler.removeCallbacks(highlightRunnable);
+            highlightHandler.postDelayed(highlightRunnable, 100);
             
         } catch (Exception e) {
             Toast.makeText(this, "Error reading file: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -150,7 +225,6 @@ public class EditorActivity extends Activity {
         if (dotIndex == -1) return;
         ext = ext.substring(dotIndex + 1).toLowerCase();
 
-        // 1. Clear old highlights
         ForegroundColorSpan[] oldSpans = editable.getSpans(0, editable.length(), ForegroundColorSpan.class);
         for (ForegroundColorSpan span : oldSpans) {
             editable.removeSpan(span);
@@ -158,19 +232,61 @@ public class EditorActivity extends Activity {
 
         String text = editable.toString();
 
-        // 2. Apply new highlights based on file type
         if (ext.equals("py")) {
             highlightPattern(editable, text, "\\b(def|class|import|from|return|if|else|elif|for|while|in|try|except|print|True|False|None|and|or|not)\\b", COLOR_KEYWORD);
-            highlightPattern(editable, text, "#.*", COLOR_COMMENT);
             highlightPattern(editable, text, "\"[^\"]*\"|'[^']*'", COLOR_STRING);
             highlightPattern(editable, text, "\\b\\d+\\b", COLOR_NUMBER);
+            highlightPattern(editable, text, "#.*", COLOR_COMMENT);
             
         } else if (ext.equals("java")) {
-            highlightPattern(editable, text, "\\b(public|private|protected|class|void|int|String|boolean|if|else|for|while|return|new|static|final|import|package)\\b", COLOR_KEYWORD);
-            highlightPattern(editable, text, "//.*", COLOR_COMMENT);
-            highlightPattern(editable, text, "\"[^\"]*\"", COLOR_STRING);
-            highlightPattern(editable, text, "\\b\\d+\\b", COLOR_NUMBER);
-            
+		
+		    // Numbers
+		    highlightPattern(editable, text,
+		        "\\b(?:0[xX][0-9a-fA-F_]+|0[bB][01_]+|\\d[\\d_]*(?:\\.\\d[\\d_]*)?(?:[eE][+-]?\\d[\\d_]*)?[fFdDlL]?)\\b",
+		        COLOR_NUMBER);
+		
+		    highlightPattern(editable, text,
+		        "'(?:\\\\.|[^'\\\\])'", COLOR_CHARACTER);
+		
+		    // Annotations
+		    highlightPattern(editable, text,
+		        "@[A-Za-z_$][A-Za-z0-9_$.]*", COLOR_ANNOTATION);
+		
+		    // Keywords
+		    highlightPattern(editable, text,
+		        "\\b(abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|if|implements|import|instanceof|int|interface|long|native|new|package|private|protected|public|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|transient|try|void|volatile|while|var|yield|record|sealed|permits)\\b",
+		        COLOR_KEYWORD);
+		
+		    // Constants
+		    highlightPattern(editable, text,
+		        "\\b(true|false|null)\\b", COLOR_CONSTANT);
+		
+		    // Common types and classes
+		    highlightPattern(editable, text,
+		        "\\b(String|Object|Integer|Long|Double|Float|Boolean|Character|Byte|Short|Void|Class|System|Thread|Math|Exception|ArrayList|HashMap|List|Map|Set|File|Scanner)\\b",
+		        COLOR_TYPE);
+		
+		    // Method names
+		    highlightPattern(editable, text,
+		        "\\b[A-Za-z_$][A-Za-z0-9_$]*(?=\\s*\\()", COLOR_METHOD);
+		
+		    // Operators
+		    highlightPattern(editable, text,
+		        ">>>=|<<=|>>=|>>>|==|!=|<=|>=|&&|\\|\\||\\+\\+|--|\\+=|-=|\\*=|/=|%=|->|::|[+*/%=<>!&|^~?:-]",
+		        COLOR_OPERATOR);
+		
+		    // Brackets
+		    highlightPattern(editable, text,
+		        "[(){}\\[\\]]", COLOR_BRACKET);
+
+		    // Strings
+		    highlightPattern(editable, text,
+		        "\"(?:(?:\\\\.)|[^\"\\\\])*\"", COLOR_STRING);
+		        
+		    // Comments
+		    highlightPattern(editable, text,
+		        "/\\*[\\s\\S]*?\\*/|//.*", COLOR_COMMENT);
+		        
         } else if (ext.equals("xml")) {
             highlightPattern(editable, text, "</?[a-zA-Z0-9_:-]+", COLOR_XML_TAG);
             highlightPattern(editable, text, "\"[^\"]*\"", COLOR_STRING);
@@ -180,8 +296,8 @@ public class EditorActivity extends Activity {
     private void highlightPattern(Editable editable, String text, String regex, int color) {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(text);
+        
         while (matcher.find()) {
-            // setSpan applies the color without changing the actual text or cursor position
             editable.setSpan(
                 new ForegroundColorSpan(color), 
                 matcher.start(), 
@@ -206,19 +322,19 @@ public class EditorActivity extends Activity {
             LinearLayout tabLayout = new LinearLayout(this);
             tabLayout.setOrientation(LinearLayout.HORIZONTAL);
             tabLayout.setGravity(Gravity.CENTER_VERTICAL);
-            tabLayout.setPadding(24, 16, 24, 16);
+            tabLayout.setPadding(24, 5, 24, 5);
             
             if (currentFile != null && currentFile.getAbsolutePath().equals(path)) {
-                tabLayout.setBackgroundColor(Color.parseColor("#262626"));
+                tabLayout.setBackgroundResource(R.drawable.tab_active);
             } else {
-                tabLayout.setBackgroundColor(Color.parseColor("#8B5CF6"));
+                tabLayout.setBackgroundResource(R.drawable.tab_inactive);
             }
 
             TextView tabName = new TextView(this);
             tabName.setText(f.getName());
-            tabName.setTextColor(Color.parseColor("#FFFFFF")); // Changed to white for better reading
+            tabName.setTextColor(Color.parseColor("#FFFFFF"));
             tabName.setTextSize(12);
-            tabName.setTypeface(codeFont);
+            tabName.setTypeface(appFont);
             
             TextView btnClose = new TextView(this);
             btnClose.setTypeface(solidFont);
@@ -263,11 +379,15 @@ public class EditorActivity extends Activity {
         ArrayList<String> list = new ArrayList<>();
         
         for (String s : recentStr.split("\n")) {
-            if (!s.equals(path) && !s.isEmpty()) list.add(s);
+            if (!s.equals(path) && !s.isEmpty()) {
+                list.add(s);
+            }
         }
 
         StringBuilder sb = new StringBuilder();
-        for (String s : list) sb.append(s).append("\n");
+        for (String s : list) {
+            sb.append(s).append("\n");
+        }
         prefs.edit().putString("recent_files", sb.toString().trim()).apply();
 
         if (currentFile != null && currentFile.getAbsolutePath().equals(path)) {
@@ -294,5 +414,17 @@ public class EditorActivity extends Activity {
                         "\n\nLast Modified: " + dateStr)
             .setPositiveButton("OK", null)
             .show();
+    }
+    
+    private void updateLineNumbers() {
+        String text = codeEditor.getText().toString();
+        int lines = text.split("\n", -1).length; 
+        
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i <= lines; i++) {
+            sb.append(i).append("\n");
+        }
+        
+        lineNumbersView.setText(sb.toString());
     }
 }
