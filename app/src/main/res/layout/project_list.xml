@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#262626">
+
+    <!-- Top Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:orientation="horizontal"
+        android:background="#8B5CF6"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/btn_close_projects"
+            android:layout_width="55dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:text="My Projects"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+            
+    </LinearLayout>
+
+    <!--View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#333333" />-->
+
+    <!-- Empty State -->
+    <TextView
+        android:id="@+id/empty_projects_text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="No projects yet.\nCreate a new project from the menu."
+        android:textColor="#888888"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
+    <!-- Project List -->
+    <ListView
+        android:id="@+id/project_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingVertical="10dp"
+        android:clipToPadding="false"
+        android:dividerHeight="5dp" />
+
+</LinearLayout>

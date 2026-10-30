@@ -1,6 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<style name="AppTheme"
-    	parent="@android:style/Theme.Material.Light.NoActionBar">
-	</style>
+
+    <!-- Main Theme -->
+    <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#1E1E1E</item>
+        <item name="android:navigationBarColor">#1E1E1E</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <style name="MoreFileTasks">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">50dp</item>
+        <item name="android:paddingHorizontal">20dp</item>
+        <item name="android:paddingVertical">10dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+
+    <style name="EditorBottomBarBtn">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">?android:attr/selectableItemBackground</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+
 </resources>

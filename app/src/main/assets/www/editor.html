@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: #262626;
+        }
+
+        #editor {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        /* DebugMate custom editor colors */
+        .ace-dracula {
+            background-color: #202020;
+        }
+
+        /* Line number gutter */
+        .ace-dracula .ace_gutter {
+            background-color: #202020;
+            color: #808080;
+        }
+
+        /* Currently active code line */
+        .ace-dracula .ace_marker-layer .ace_active-line {
+            background-color: #141414;
+        }
+
+        /* Active line number */
+        .ace-dracula .ace_gutter-active-line {
+            background-color: #141414;
+            color: #8B5CF6;
+        }
+
+        /* Find & Replace floating panel */
+        #findReplacePanel {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            width: 320px;
+            max-width: calc(100% - 20px);
+            max-height: calc(100% - 20px);
+            overflow-y: auto;
+            box-sizing: border-box;
+            padding: 12px;
+            background: #1F1F1F;
+            color: #FFFFFF;
+            border: 1px solid #8B5CF6;
+            border-radius: 12px;
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        #findReplacePanel * {
+            box-sizing: border-box;
+        }
+
+        .fr-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .fr-title {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .fr-close {
+            width: 30px;
+            height: 30px;
+            border: 0;
+            border-radius: 7px;
+            background: transparent;
+            color: #BBBBBB;
+            font-size: 22px;
+        }
+
+        .fr-close:active {
+            background: #383044;
+            color: #FFFFFF;
+        }
+
+        .fr-section-label {
+            display: block;
+            margin: 4px 0 6px;
+            color: #A78BFA;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .fr-input-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 9px;
+        }
+
+        .fr-input {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
+            height: 38px;
+            padding: 0 10px;
+            border: 1px solid #444444;
+            border-radius: 7px;
+            outline: none;
+            background: #292929;
+            color: #FFFFFF;
+            font-size: 13px;
+        }
+
+        .fr-input:focus {
+            border-color: #8B5CF6;
+        }
+
+        .fr-button {
+            min-height: 34px;
+            padding: 0 10px;
+            border: 1px solid #8B5CF6;
+            border-radius: 7px;
+            background: #8B5CF6;
+            color: #FFFFFF;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .fr-button:active {
+            background: #7041D8;
+        }
+
+        .fr-button-secondary {
+            background: #303030;
+            border-color: #494949;
+            color: #E0E0E0;
+        }
+
+        .fr-options {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin: 3px 0 11px;
+            color: #BDBDBD;
+            font-size: 12px;
+        }
+
+        .fr-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .fr-option input {
+            accent-color: #8B5CF6;
+        }
+
+        #frMatchCount {
+            flex: 1;
+            min-width: 55px;
+            color: #BDBDBD;
+            font-size: 11px;
+            text-align: right;
+        }
+
+        .fr-divider {
+            height: 1px;
+            margin: 11px 0;
+            background: #383838;
+        }
+
+        .fr-replace-actions {
+            display: flex;
+            gap: 7px;
+        }
+
+        .fr-replace-actions .fr-button {
+            flex: 1;
+        }
+        
+        /* =========================================
+           DebugMate Autocomplete & Snippet Popup
+           ========================================= */
+
+        /* Popup container: don't assume it's inside .ace_editor */
+        .ace_autocomplete {
+            background: #1F1F1F !important;
+            color: #E6E6E6 !important;
+            border: 1px solid #8B5CF6 !important;
+            border-radius: 9px !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65) !important;
+            font-family: monospace !important;
+            overflow: hidden !important;
+        }
+
+        /* Suggestion rows */
+        .ace_autocomplete .ace_completion,
+        .ace_autocomplete .ace_line {
+            background-color: #1F1F1F !important;
+            color: #E6E6E6 !important;
+        }
+
+        /* Currently selected suggestion */
+        .ace_autocomplete .ace_completion.selected,
+        .ace_autocomplete .ace_completion:hover,
+        .ace_autocomplete .ace_line:hover {
+            background-color: #382858 !important;
+            color: #FFFFFF !important;
+        }
+
+        /* Selected row variants used by Ace */
+        .ace_autocomplete .ace_selected {
+            background-color: #382858 !important;
+            color: #FFFFFF !important;
+        }
+
+        /* Highlighted part of a suggestion */
+        .ace_autocomplete .ace_completion-highlight {
+            color: #C4B5FD !important;
+            font-weight: bold !important;
+        }
+
+        /* Labels such as "local", "function", or "method" */
+        .ace_autocomplete .ace_completion-meta {
+            color: #A78BFA !important;
+        }
+
+        /* Completion type and detail */
+        .ace_autocomplete .ace_completion-type {
+            color: #8B5CF6 !important;
+        }
+
+        .ace_autocomplete .ace_completion-detail {
+            color: #A3A3A3 !important;
+        }
+
+        /* Popup scrollbar */
+        .ace_autocomplete::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .ace_autocomplete::-webkit-scrollbar-thumb {
+            background: #8B5CF6;
+            border-radius: 5px;
+        }
+
+        .ace_autocomplete::-webkit-scrollbar-track {
+            background: #1F1F1F;
+        }
+        
+        /* ========================================
+           DebugMate Custom Selection Toolbar
+           ======================================== */
+
+        #debugMateSelectionToolbar {
+            display: none;
+            position: absolute;
+            z-index: 2000;
+            width: max-content;
+            max-width: calc(100% - 16px);
+            padding: 6px;
+            background: #202020;
+            border: 1px solid #8B5CF6;
+            border-radius: 12px;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.55);
+            font-family: Arial, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #debugMateSelectionToolbar .dm-toolbar-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        #debugMateSelectionToolbar .dm-tool-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            width: 62px;
+            min-width: 0;
+            height: 55px;
+            padding: 5px 2px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: #E6E6E6;
+            font-size: 11px;
+            white-space: nowrap;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #debugMateSelectionToolbar .dm-tool-button:active {
+            background: #382858;
+            color: #C4B5FD;
+        }
+
+        #debugMateSelectionToolbar .dm-tool-icon {
+            color: #A78BFA;
+            font-size: 19px;
+            line-height: 20px;
+            font-weight: bold;
+        }
+
+        #debugMateSelectionToolbar .dm-tool-label {
+            color: inherit;
+            font-size: 10px;
+        }
+
+        /* Smaller buttons on narrow screens */
+        @media (max-width: 400px) {
+            #debugMateSelectionToolbar .dm-tool-button {
+                width: 53px;
+                height: 51px;
+            }
+
+            #debugMateSelectionToolbar .dm-tool-label {
+                font-size: 9px;
+            }
+        }
+
+
+    </style>
+</head>
+
+<body>
+    <div id="editor"></div>
+    
+    <!-- DebugMate Custom Selection Toolbar -->
+    <div id="debugMateSelectionToolbar">
+        <div class="dm-toolbar-row">
+    
+            <button type="button" class="dm-tool-button"
+                data-action="copy" aria-label="Copy">
+                <span class="dm-tool-icon">▢</span>
+                <span class="dm-tool-label">Copy</span>
+            </button>
+    
+            <button type="button" class="dm-tool-button"
+                data-action="cut" aria-label="Cut">
+                <span class="dm-tool-icon">✂</span>
+                <span class="dm-tool-label">Cut</span>
+            </button>
+    
+            <button type="button" class="dm-tool-button"
+                data-action="paste" aria-label="Paste">
+                <span class="dm-tool-icon">▤</span>
+                <span class="dm-tool-label">Paste</span>
+            </button>
+    
+            <button type="button" class="dm-tool-button"
+                data-action="selectAll" aria-label="Select All">
+                <span class="dm-tool-icon">▧</span>
+                <span class="dm-tool-label">Select All</span>
+            </button>
+    
+            <button type="button" class="dm-tool-button"
+                data-action="toEnd" aria-label="To End">
+                <span class="dm-tool-icon">⇥</span>
+                <span class="dm-tool-label">To End</span>
+            </button>
+    
+            <button type="button" class="dm-tool-button"
+                data-action="toStart" aria-label="To Start">
+                <span class="dm-tool-icon">⇤</span>
+                <span class="dm-tool-label">To Start</span>
+            </button>
+    
+        </div>
+    </div>
+
+
+    <!-- Custom Find & Replace panel -->
+    <div id="findReplacePanel">
+        <div class="fr-header">
+            <span class="fr-title">Find &amp; Replace</span>
+            <button type="button" id="frClose"
+                class="fr-close" aria-label="Close panel">×</button>
+        </div>
+
+        <label class="fr-section-label" for="frFindInput">Find</label>
+
+        <div class="fr-input-row">
+            <input type="text" id="frFindInput"
+                class="fr-input"
+                placeholder="Search in code..."
+                autocomplete="off">
+
+            <button type="button" id="frPrevious"
+                class="fr-button fr-button-secondary"
+                aria-label="Previous match">↑</button>
+
+            <button type="button" id="frNext"
+                class="fr-button"
+                aria-label="Next match">↓</button>
+        </div>
+
+        <div class="fr-options">
+            <label class="fr-option">
+                <input type="checkbox" id="frCaseSensitive">
+                Match case
+            </label>
+
+            <label class="fr-option">
+                <input type="checkbox" id="frWholeWord">
+                Whole word
+            </label>
+
+            <span id="frMatchCount">0 matches</span>
+        </div>
+
+        <div class="fr-divider"></div>
+
+        <label class="fr-section-label" for="frReplaceInput">
+            Replace with
+        </label>
+
+        <div class="fr-input-row">
+            <input type="text" id="frReplaceInput"
+                class="fr-input"
+                placeholder="Replacement text..."
+                autocomplete="off">
+        </div>
+
+        <div class="fr-replace-actions">
+            <button type="button" id="frReplaceOne"
+                class="fr-button fr-button-secondary">Replace</button>
+
+            <button type="button" id="frReplaceAll"
+                class="fr-button">Replace All</button>
+        </div>
+    </div>
+
+    <!-- Local scripts for offline use -->
+    <script src="ace.js"></script>
+    <script src="ext-language_tools.js"></script>
+    <script src="theme-dracula.min.js"></script>
+
+    <script>
+        var editor = ace.edit("editor");
+        editor.setOption("selectionStyle", "text");
+        
+        // Local paths: no internet required
+        ace.config.set("basePath", ".");
+        ace.config.set("modePath", ".");
+        ace.config.set("themePath", ".");
+        ace.config.set("workerPath", ".");
+
+        editor.setTheme("ace/theme/dracula");
+        editor.session.setMode("ace/mode/java");
+        editor.setShowPrintMargin(false);
+
+        editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true,
+            enableSnippets: true,
+            enableMobileMenu: false,
+            showLineNumbers: true,
+            tabSize: 4
+        });
+
+        // Java calls this to load a file
+        function setCode(code, extension) {
+            editor.setValue(code, -1);
+
+            var modes = {
+                py: "ace/mode/python",
+                js: "ace/mode/javascript",
+                html: "ace/mode/html",
+                css: "ace/mode/css",
+                java: "ace/mode/java",
+                xml: "ace/mode/xml",
+                json: "ace/mode/json"
+            };
+
+            var mode = modes[extension] || "ace/mode/text";
+            editor.session.setMode(mode);
+        }
+
+        // Java calls this to retrieve the current code
+        function getCode() {
+            return editor.getValue();
+        }
+
+        // Existing editor controls
+        function undo() {
+            editor.undo();
+        }
+
+        function redo() {
+            editor.redo();
+        }
+
+        // Find & Replace elements
+        var frPanel = document.getElementById("findReplacePanel");
+        var frFind = document.getElementById("frFindInput");
+        var frReplace = document.getElementById("frReplaceInput");
+        var frCase = document.getElementById("frCaseSensitive");
+        var frWhole = document.getElementById("frWholeWord");
+        var frCount = document.getElementById("frMatchCount");
+
+        var frMatchRanges = [];
+        var frActiveIndex = -1;
+        var frLastQuery = "";
+
+        // Build Ace search options
+        function getFindOptions(backwards) {
+            return {
+                backwards: !!backwards,
+                wrap: true,
+                caseSensitive: frCase.checked,
+                wholeWord: frWhole.checked,
+                regExp: false
+            };
+        }
+
+        // Find every matching range for an accurate count
+        function updateMatchCount() {
+            var query = frFind.value;
+            frMatchRanges = [];
+            frActiveIndex = -1;
+
+            if (!query) {
+                frCount.textContent = "0 matches";
+                frLastQuery = "";
+                return;
+            }
+
+            var searchOptions = getFindOptions(false);
+            var Search = ace.require("ace/search").Search;
+            var search = new Search();
+
+            search.set({
+                needle: query,
+                caseSensitive: searchOptions.caseSensitive,
+                wholeWord: searchOptions.wholeWord,
+                regExp: false
+            });
+
+            frMatchRanges = search.findAll(editor.session);
+
+            if (frMatchRanges.length === 0) {
+                frCount.textContent = "0 matches";
+                frLastQuery = query;
+                return;
+            }
+
+            var cursor = editor.getCursorPosition();
+
+            // Select the match at or immediately after the cursor
+            for (var i = 0; i < frMatchRanges.length; i++) {
+                var start = frMatchRanges[i].start;
+                var end = frMatchRanges[i].end;
+
+                if (
+                    start.row > cursor.row ||
+                    (start.row === cursor.row &&
+                     start.column >= cursor.column)
+                ) {
+                    frActiveIndex = i;
+                    break;
+                }
+
+                if (
+                    start.row <= cursor.row &&
+                    (end.row > cursor.row ||
+                     (end.row === cursor.row &&
+                      end.column > cursor.column))
+                ) {
+                    frActiveIndex = i;
+                    break;
+                }
+            }
+
+            if (frActiveIndex === -1) {
+                frActiveIndex = 0;
+            }
+
+            frLastQuery = query;
+            frCount.textContent =
+                (frActiveIndex + 1) + " of " +
+                frMatchRanges.length + " matches";
+        }
+
+        // Navigate to a match and select it
+        function goToMatch(index) {
+            if (!frMatchRanges.length) {
+                updateMatchCount();
+                return;
+            }
+
+            var length = frMatchRanges.length;
+            frActiveIndex = ((index % length) + length) % length;
+
+            var range = frMatchRanges[frActiveIndex];
+
+            editor.selection.setRange(range, false);
+            editor.scrollToLine(range.start.row, true, true);
+            editor.focus();
+
+            frCount.textContent =
+                (frActiveIndex + 1) + " of " +
+                length + " matches";
+        }
+
+        function findNext() {
+            if (frFind.value !== frLastQuery) {
+                updateMatchCount();
+            }
+
+            if (frMatchRanges.length) {
+                goToMatch(frActiveIndex + 1);
+            }
+        }
+
+        function findPrevious() {
+            if (frFind.value !== frLastQuery) {
+                updateMatchCount();
+            }
+
+            if (frMatchRanges.length) {
+                goToMatch(frActiveIndex - 1);
+            }
+        }
+
+        // Open the custom panel. Java already calls find().
+        function find() {
+            frPanel.style.display = "block";
+            updateMatchCount();
+            frFind.focus();
+            frFind.select();
+        }
+
+        function closeFindReplace() {
+            frPanel.style.display = "none";
+            editor.focus();
+        }
+
+        // Replace the currently selected matching text
+        function replaceOne() {
+            var query = frFind.value;
+
+            if (!query) {
+                frFind.focus();
+                return;
+            }
+
+            updateMatchCount();
+
+            if (!frMatchRanges.length) {
+                return;
+            }
+
+            var range = frMatchRanges[frActiveIndex];
+
+            // Replace only when the selection is the active search match
+            editor.selection.setRange(range, false);
+            editor.session.replace(
+                range,
+                frReplace.value
+            );
+
+            updateMatchCount();
+
+            if (frMatchRanges.length) {
+                goToMatch(
+                    Math.min(frActiveIndex, frMatchRanges.length - 1)
+                );
+            }
+        }
+
+        // Replace all occurrences, from the end to avoid shifting ranges
+        function replaceAll() {
+            var query = frFind.value;
+
+            if (!query) {
+                frFind.focus();
+                return;
+            }
+
+            updateMatchCount();
+
+            if (!frMatchRanges.length) {
+                return;
+            }
+
+            var replacement = frReplace.value;
+
+            for (var i = frMatchRanges.length - 1; i >= 0; i--) {
+                editor.session.replace(
+                    frMatchRanges[i],
+                    replacement
+                );
+            }
+
+            updateMatchCount();
+            editor.focus();
+        }
+
+        // Wire up panel buttons
+        document.getElementById("frClose").addEventListener(
+            "click", closeFindReplace
+        );
+
+        document.getElementById("frNext").addEventListener(
+            "click", findNext
+        );
+
+        document.getElementById("frPrevious").addEventListener(
+            "click", findPrevious
+        );
+
+        document.getElementById("frReplaceOne").addEventListener(
+            "click", replaceOne
+        );
+
+        document.getElementById("frReplaceAll").addEventListener(
+            "click", replaceAll
+        );
+
+        // Refresh matches when search options change
+        frFind.addEventListener("input", function() {
+            updateMatchCount();
+
+            if (frMatchRanges.length) {
+                goToMatch(frActiveIndex);
+            }
+        });
+
+        frCase.addEventListener("change", function() {
+            updateMatchCount();
+
+            if (frMatchRanges.length) {
+                goToMatch(frActiveIndex);
+            }
+        });
+
+        frWhole.addEventListener("change", function() {
+            updateMatchCount();
+
+            if (frMatchRanges.length) {
+                goToMatch(frActiveIndex);
+            }
+        });
+
+        // Enter = next match; Shift+Enter = previous match
+        frFind.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+
+                if (event.shiftKey) {
+                    findPrevious();
+                } else {
+                    findNext();
+                }
+            }
+
+            if (event.key === "Escape") {
+                closeFindReplace();
+            }
+        });
+
+        frReplace.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                replaceOne();
+            }
+
+            if (event.key === "Escape") {
+                closeFindReplace();
+            }
+        });
+
+        // Clicking the panel should not trigger editor interactions
+        frPanel.addEventListener("mousedown", function(event) {
+            event.stopPropagation();
+        });
+
+        // Escape closes the panel when focus is on its buttons/options
+        document.addEventListener("keydown", function(event) {
+            if (
+                event.key === "Escape" &&
+                frPanel.style.display === "block"
+            ) {
+                closeFindReplace();
+            }
+        });
+
+        // Signal that Ace and its JavaScript functions are initialized
+
+        /* ========================================
+           DebugMate Selection Toolbar Logic
+           ======================================== */
+
+        var dmToolbar = document.getElementById(
+            "debugMateSelectionToolbar"
+        );
+        
+        var dmToolbarButtons = dmToolbar.querySelectorAll(
+            "[data-action]"
+        );
+        
+        // Position toolbar near the active selection/cursor
+        function positionDebugMateToolbar() {
+            var selection = editor.getSelectionRange();
+        
+            var cursor = selection.isEmpty()
+                ? editor.getCursorPosition()
+                : selection.start;
+        
+            var pixelPosition = editor.renderer.textToScreenCoordinates(
+                cursor.row,
+                cursor.column
+            );
+        
+            var editorRect = editor.container.getBoundingClientRect();
+        
+            // Convert screen coordinates to editor WebView coordinates
+            var left = pixelPosition.pageX;
+            var top = pixelPosition.pageY + 22;
+        
+            var toolbarWidth = dmToolbar.offsetWidth;
+            var toolbarHeight = dmToolbar.offsetHeight;
+        
+            var maxLeft = window.innerWidth - toolbarWidth - 8;
+        
+            left = Math.max(8, Math.min(left, maxLeft));
+        
+            // If there isn't room below the cursor, place it above
+            if (top + toolbarHeight > window.innerHeight - 8) {
+                top = pixelPosition.pageY - toolbarHeight - 8;
+            }
+        
+            top = Math.max(8, top);
+        
+            dmToolbar.style.left = left + "px";
+            dmToolbar.style.top = top + "px";
+        }
+        
+        // Show the toolbar
+        function showDebugMateToolbar() {
+            dmToolbar.style.display = "block";
+            positionDebugMateToolbar();
+        }
+
+        // Hide the toolbar
+        function hideDebugMateToolbar() {
+            dmToolbar.style.display = "none";
+        }
+    
+        // Clipboard operations
+        function dmCopy() {
+            var selectedText = editor.getSelectedText();
+        
+            if (selectedText) {
+                AndroidBridge.copyText(selectedText);
+            }
+
+            hideDebugMateToolbar();
+            editor.focus();
+        }
+
+        function dmCut() {
+            var selectedText = editor.getSelectedText();
+
+            if (selectedText) {
+                AndroidBridge.copyText(selectedText);
+                editor.session.remove(editor.getSelectionRange());
+            }
+
+            hideDebugMateToolbar();
+            editor.focus();
+        }
+
+        function dmPaste() {
+            var clipboardText = AndroidBridge.getClipboardText();
+
+            if (clipboardText) {
+                editor.insert(clipboardText);
+            }
+        
+            hideDebugMateToolbar();
+            editor.focus();
+        }
+    
+        function dmSelectAll() {
+            editor.selectAll();
+            showDebugMateToolbar();
+        }
+
+        function dmToEnd() {
+            editor.navigateFileEnd();
+            editor.clearSelection();
+            hideDebugMateToolbar();
+            editor.focus();
+        }
+        
+        function dmToStart() {
+            editor.navigateFileStart();
+            editor.clearSelection();
+            hideDebugMateToolbar();
+            editor.focus();
+        }
+        
+        // Connect toolbar buttons
+        for (var i = 0; i < dmToolbarButtons.length; i++) {
+            dmToolbarButtons[i].addEventListener("click", function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+        
+                var action = this.getAttribute("data-action");
+        
+                switch (action) {
+                    case "copy":
+                        dmCopy();
+                        break;
+        
+                    case "cut":
+                        dmCut();
+                        break;
+        
+                    case "paste":
+                        dmPaste();
+                        break;
+        
+                    case "selectAll":
+                        dmSelectAll();
+                        break;
+        
+                    case "toEnd":
+                        dmToEnd();
+                        break;
+        
+                    case "toStart":
+                        dmToStart();
+                        break;
+                }
+            });
+        }
+
+        /* Show toolbar when text is selected */
+        var dmSelection = editor.selection;
+        
+        dmSelection.on("changeSelection", function() {
+            if (!dmSelection.isEmpty()) {
+                showDebugMateToolbar();
+            } else {
+                hideDebugMateToolbar();
+            }
+        });
+        
+        /* Update toolbar position when cursor moves */
+        dmSelection.on("changeCursor", function() {
+            if (dmToolbar.style.display === "block") {
+                positionDebugMateToolbar();
+            }
+        });
+        
+        /* Keep toolbar visible while interacting with its buttons */
+        dmToolbar.addEventListener("mousedown", function(event) {
+            event.preventDefault();
+        });
+        
+        /* Hide toolbar when tapping elsewhere in the editor */
+        editor.container.addEventListener("mousedown", function() {
+            hideDebugMateToolbar();
+        });
+        
+        // Keep the toolbar inside the visible screen
+        window.addEventListener("resize", function() {
+            if (dmToolbar.style.display === "block") {
+                positionDebugMateToolbar();
+            }
+        });
+
+        window.editorReady = true;
+    </script>
+</body>
+</html>

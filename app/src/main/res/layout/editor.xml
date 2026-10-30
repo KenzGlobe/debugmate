@@ -24,9 +24,9 @@
 	
 	    <!-- File Name -->
 		<LinearLayout
-		    android:layout_width="0dp"
+		    android:layout_width="match_parent"
 		    android:layout_height="match_parent"
-		    android:layout_weight="1"
+		    android:layout_marginEnd="5dp"
 		    android:orientation="vertical">
 		    
 		    <TextView
@@ -54,15 +54,6 @@
 		        android:layout_marginStart="8dp" />
 	        
 	    </LinearLayout>
-	
-	    <!-- Save Button -->
-	    <TextView
-	        android:id="@+id/btn_save"
-	        android:layout_width="40dp"
-	        android:layout_height="match_parent"
-	        android:gravity="center"
-	        android:textColor="#FFFFFF"
-	        android:textSize="20sp" />
 	        
 	</LinearLayout>
 
@@ -72,12 +63,11 @@
         android:background="#DDDDDD" />
 
     <!-- TAB BAR -->
-    
 	<LinearLayout
 	    android:layout_width="match_parent"
 	    android:layout_height="40dp"
 	    android:orientation="horizontal"
-	    android:background="#262626"
+	    android:background="#202020"
 	    android:gravity="center_vertical">
 	
 	    <TextView
@@ -91,69 +81,60 @@
 	    
 	    <HorizontalScrollView
 	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content"
+	        android:layout_height="match_parent"
 	        android:paddingLeft="5dp"
-	        android:paddingVertical="5dp"
 	        android:scrollbars="none">
 	
 	        <LinearLayout
 	            android:id="@+id/tab_container"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
+	            android:layout_width="match_parent"
+	            android:layout_height="match_parent"
+	            android:gravity="center_vertical"
 	            android:orientation="horizontal" />
 	            
 	    </HorizontalScrollView>
 	    
 	</LinearLayout>
 
-    <!-- The Code Area with Line Numbers -->
+	<!-- The Code Area (Handled by WebView) -->
+    <com.kenzglobe.debugmate.NoSelectionWebView
+        android:id="@+id/code_editor_webview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#1E1E1E" />
+    
 	<LinearLayout
-	    android:layout_width="match_parent"
-	    android:layout_height="match_parent"
-	    android:orientation="horizontal"
-	    android:background="#262626">
-	
-	    <!-- Line Numbers with ScrollView -->
-		<ScrollView
-		    android:id="@+id/scroll_numbers"
-		    android:layout_width="wrap_content"
-		    android:layout_height="match_parent"
-		    android:scrollbars="none"
-		    android:focusable="false"
-		    android:focusableInTouchMode="false">
-		    
-		    <TextView
-		        android:id="@+id/line_numbers"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:background="#1A1A1A"
-		        android:paddingLeft="8dp"
-		        android:paddingRight="8dp"
-		        android:gravity="top|end"
-		        android:textColor="#8B5CF6"
-		        android:textSize="10sp"
-		        android:fontFamily="monospace"
-		        android:text="1\n" />
-		        
-		</ScrollView>
-	
-	    <!-- The Code Editor -->
-	    <EditText
-	        android:id="@+id/code_editor"
-	        android:layout_width="0dp"
-	        android:layout_height="match_parent"
-	        android:layout_weight="1"
-	        android:background="@null"
-	        android:gravity="top|start"
-	        android:inputType="textMultiLine|textNoSuggestions"
-	        android:imeOptions="flagNoExtractUi"
-	        android:paddingLeft="2dp"
-	        android:textColor="#FFFFFF"
-	        android:textSize="10sp"
-	        android:fontFamily="monospace"
-	        android:scrollbars="horizontal|vertical"
-	        android:scrollHorizontally="true" />
-	        
-	</LinearLayout>
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:orientation="horizontal"
+        android:background="#8B5CF6">
+
+        <!-- Save -->
+        <TextView
+            android:id="@+id/btn_save"
+            style="@style/EditorBottomBarBtn" />
+
+        <!-- Find / Search -->
+        <TextView
+            android:id="@+id/btn_find"
+            style="@style/EditorBottomBarBtn" />
+    
+        <!-- Undo -->
+        <TextView
+            android:id="@+id/btn_undo"
+            style="@style/EditorBottomBarBtn" />
+
+        <!-- Redo -->
+        <TextView
+            android:id="@+id/btn_redo"
+            style="@style/EditorBottomBarBtn" />
+
+        <!-- Run -->
+        <TextView
+            android:id="@+id/btn_run"
+            style="@style/EditorBottomBarBtn" />
+
+    </LinearLayout>
 
 </LinearLayout>

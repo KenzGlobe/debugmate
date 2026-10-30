@@ -7,13 +7,15 @@ public class FileItem {
     public String name;
     public boolean isDir;
     public String ext;
+    public boolean isSelected = false;
 
     public FileItem(File file) {
         this.file = file;
         this.name = file.getName();
         this.isDir = file.isDirectory();
-        if(!isDir && name.contains(".")) {
-            ext = name.substring(name.lastIndexOf(".")+1).toLowerCase();
+        
+        if (!isDir && name.contains(".")) {
+            ext = name.substring(name.lastIndexOf(".") + 1).toLowerCase();
         } else {
             ext = "";
         }

@@ -1,72 +1,51 @@
+
 package com.kenzglobe.debugmate;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.text.Editable;
-import android.text.Spanned;
-import android.text.TextWatcher;
-import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.view.Gravity;
-import android.view.MotionEvent;
-import android.widget.EditText;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.json.JSONArray;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class EditorActivity extends Activity {
 
     private File currentFile;
-    private EditText codeEditor;
-    private Typeface appFont, codeFont, solidFont;
-    private ScrollView scrollNumbers;
-    private TextView fileNameView, fileNamePath, sideBarBtn, lineNumbersView, btnSave, btnBack;
-    private LinearLayout tabContainer;
+    private WebView codeEditorWebView;
 
-    private final int COLOR_KEYWORD = Color.parseColor("#569CD6");
-    private final int COLOR_STRING = Color.parseColor("#CE9178");
-    private final int COLOR_COMMENT = Color.parseColor("#555555");
-    private final int COLOR_NUMBER = Color.parseColor("#B5CEA8");
-    private final int COLOR_TYPE = Color.parseColor("#4EC9B0");
-    private final int COLOR_METHOD = Color.parseColor("#DCDCAA");
-    private final int COLOR_ANNOTATION = Color.parseColor("#DCDCAA");
-    private final int COLOR_CONSTANT = Color.parseColor("#4FC1FF");
-    private final int COLOR_OPERATOR = Color.parseColor("#D4D4D4");
-    private final int COLOR_CHARACTER = Color.parseColor("#CE9178");
-    private final int COLOR_BRACKET = Color.parseColor("#FFD700");
-    private final int COLOR_XML_TAG = Color.parseColor("#569CD6");
-    
-    // DEBOUNCE HANDLER
-    private Handler highlightHandler = new Handler(Looper.getMainLooper());
-    private Runnable highlightRunnable = new Runnable() {
-        @Override
-        public void run() {
-            applySyntaxHighlighting(codeEditor.getText());
-        }
-    };
+    private boolean editorReady = false;
+    private String pendingCode = null;
+    private String pendingExtension = "text";
+
+    private Typeface appFont, solidFont;
+
+    private TextView fileNameView, fileNamePath, sideBarBtn,
+            btnBack, btnSave, btnFind, btnUndo, btnRedo, btnRun;
+
+    private LinearLayout tabContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.editor);
-        
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setStatusBarColor(Color.parseColor("#8B5CF6"));
             getWindow().getDecorView().setSystemUiVisibility(0);
@@ -75,109 +54,97 @@ public class EditorActivity extends Activity {
         if (getActionBar() != null) {
             getActionBar().hide();
         }
-        
-        appFont = Typeface.createFromAsset(getAssets(), "fonts/SpaceMono-Bold.ttf");
-        codeFont = Typeface.createFromAsset(getAssets(), "fonts/FiraCode-Regular.ttf");
-        solidFont = Typeface.createFromAsset(getAssets(), "fonts/fa-solid-900-v5.ttf");
+
+        appFont = Typeface.createFromAsset(
+                getAssets(), "fonts/SpaceMono-Bold.ttf");
+
+        solidFont = Typeface.createFromAsset(
+                getAssets(), "fonts/fa-solid-900-v5.ttf");
 
         fileNameView = findViewById(R.id.editor_file_name);
         fileNamePath = findViewById(R.id.editor_file_path);
         sideBarBtn = findViewById(R.id.side_bar);
-        scrollNumbers = findViewById(R.id.scroll_numbers);
-        lineNumbersView = findViewById(R.id.line_numbers);
-        codeEditor = findViewById(R.id.code_editor);
-        btnSave = findViewById(R.id.btn_save);
+        codeEditorWebView = findViewById(R.id.code_editor_webview);
         btnBack = findViewById(R.id.btn_back);
+        btnSave = findViewById(R.id.btn_save);
+        btnFind = findViewById(R.id.btn_find);
+        btnUndo = findViewById(R.id.btn_undo);
+        btnRedo = findViewById(R.id.btn_redo);
+        btnRun = findViewById(R.id.btn_run);
         tabContainer = findViewById(R.id.tab_container);
-        
+
+        setupBottomIcon(sideBarBtn, "\uf07b", solidFont);
+        setupBottomIcon(btnBack, "\uf060", solidFont);
+        setupBottomIcon(btnSave, "\uf0c7", solidFont);
+        setupBottomIcon(btnFind, "\uf002", solidFont);
+        setupBottomIcon(btnUndo, "\uf0e2", solidFont);
+        setupBottomIcon(btnRedo, "\uf01e", solidFont);
+        setupBottomIcon(btnRun, "\uf04b", solidFont);
+
         fileNameView.setTypeface(appFont);
         fileNamePath.setTypeface(appFont);
-        codeEditor.setTypeface(codeFont);
-        codeEditor.setHorizontallyScrolling(true);
-        lineNumbersView.setTypeface(codeFont);
-        
-        sideBarBtn.setTypeface(solidFont);
-        sideBarBtn.setText("\uf0c9");
-        
-        btnSave.setTypeface(solidFont);
-        btnSave.setText("\uf142");
-        
-        btnBack.setTypeface(solidFont);
-        btnBack.setText("\uf060");
 
-        // Sync the vertical scroll of the line numbers with the code editor
-        codeEditor.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+        // Configure WebView before loading the editor page.
+        codeEditorWebView.getSettings().setJavaScriptEnabled(true);
+        codeEditorWebView.getSettings().setDomStorageEnabled(true);
+
+        codeEditorWebView.addJavascriptInterface(
+                new WebAppInterface(), "AndroidBridge");
+
+        codeEditorWebView.setWebViewClient(new WebViewClient() {
             @Override
-            public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-                scrollNumbers.scrollTo(0, scrollY);
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+
+                // Confirm that Ace and setCode() are initialized.
+                view.evaluateJavascript(
+                        "typeof setCode === 'function' && window.editorReady === true",
+                        new android.webkit.ValueCallback<String>() {
+                            @Override
+                            public void onReceiveValue(String result) {
+                                editorReady = "true".equals(result);
+
+                                if (editorReady && pendingCode != null) {
+                                    sendCodeToEditor(
+                                            pendingCode, pendingExtension);
+
+                                    pendingCode = null;
+                                }
+                            }
+                        }
+                );
             }
         });
 
-        // FIX THE SNAPPING CURSOR BUG
-        // This intercepts swipes so the cursor doesn't drag the view back
-        codeEditor.setOnTouchListener(new View.OnTouchListener() {
-            private float startX, startY;
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    startX = event.getX();
-                    startY = event.getY();
-                } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-                    float dx = Math.abs(event.getX() - startX);
-                    float dy = Math.abs(event.getY() - startY);
-                    if (dx > 15 || dy > 15) {
-                        // If it's a swipe, clear focus to stop the cursor snap back
-                        v.clearFocus();
-                    }
-                } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                    // Give focus back when the user stops swiping
-                    v.requestFocus();
-                }
-                return false;
-            }
-        });
-
-        // ADD THE TEXT WATCHER FOR SYNTAX HIGHLIGHTING (DEBOUNCED)
-        codeEditor.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                updateLineNumbers(); 
-                
-                // Remove any pending highlight jobs
-                highlightHandler.removeCallbacks(highlightRunnable);
-                // Wait 300ms after the user stops typing, then highlight
-                highlightHandler.postDelayed(highlightRunnable, 300);
-            }
-        });
+        codeEditorWebView.loadUrl(
+                "file:///android_asset/www/editor.html");
 
         String filePath = getIntent().getStringExtra("file_path");
-        if (filePath != null) {
+
+        // If no file path was passed (e.g., opened via Workspace), find the most recent file
+        if (filePath == null || filePath.isEmpty()) {
+            SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+            String recentStr = prefs.getString("recent_files", "");
+            
+            if (!recentStr.isEmpty()) {
+                String[] paths = recentStr.split("\n");
+                // Loop through recent files and find the first one that still exists
+                for (String path : paths) {
+                    File f = new File(path);
+                    if (f.exists() && f.isFile()) {
+                        filePath = path;
+                        break; // Stop once we find the most recent valid file
+                    }
+                        }
+            }
+        }
+
+        // Load the file if we found one (either from Intent or SharedPreferences)
+        if (filePath != null && !filePath.isEmpty()) {
             loadFile(new File(filePath));
         }
 
         buildTabs();
-
-        btnSave.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (currentFile != null) {
-                    try {
-                        FileWriter writer = new FileWriter(currentFile, false);
-                        writer.write(codeEditor.getText().toString());
-                        writer.close();
-                        Toast.makeText(EditorActivity.this, "Saved successfully! ✔️", Toast.LENGTH_SHORT).show();
-                    } catch (Exception e) {
-                        Toast.makeText(EditorActivity.this, "Error saving: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                }
-            }
-        });
 
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -185,163 +152,327 @@ public class EditorActivity extends Activity {
                 finish();
             }
         });
+
+        btnSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                saveCurrentFile();
+            }
+        });
+
+        btnFind.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                runEditorCommand("find();");
+            }
+        });
+
+        btnUndo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                runEditorCommand("undo();");
+            }
+        });
+
+        btnRedo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                runEditorCommand("redo();");
+            }
+        });
+
+        btnRun.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!editorReady) {
+                    Toast.makeText(EditorActivity.this, "Editor is still loading...", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (currentFile == null) {
+                    Toast.makeText(EditorActivity.this, "No file open.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String ext = "";
+                String name = currentFile.getName();
+                int dotIndex = name.lastIndexOf('.');
+                if (dotIndex != -1) {
+                    ext = name.substring(dotIndex + 1).toLowerCase();
+                }
+
+                // Only run web files for now
+                if (!ext.equals("html") && !ext.equals("css") && !ext.equals("js")) {
+                    Toast.makeText(EditorActivity.this, "Running ." + ext + " is not supported yet.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                // Get the code from WebView and start the preview
+                codeEditorWebView.evaluateJavascript("getCode();", new android.webkit.ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String result) {
+                        try {
+                            if (result == null || "null".equals(result)) {
+                                throw new Exception("Editor returned no content.");
+                            }
+
+                            // Decode the JSON string
+                            String cleanCode = new JSONArray("[" + result + "]").getString(0);
+                            
+                            // Launch the new Activity
+                            android.content.Intent intent = new android.content.Intent(EditorActivity.this, WebBrowserActivity.class);
+                            intent.putExtra("code", cleanCode);
+                            intent.putExtra("file_name", currentFile.getName());
+
+                            // Pass the directory so the WebView knows where to find local files
+                            String parentDir = currentFile.getParent();
+                            intent.putExtra("base_url", "file://" + parentDir + "/");
+
+                            String ext = "";
+                            int dotIndex = currentFile.getName().lastIndexOf('.');
+                            if (dotIndex != -1) {
+                                ext = currentFile.getName().substring(dotIndex + 1).toLowerCase();
+                            }
+                            intent.putExtra("extension", ext);
+
+                            startActivity(intent);
+
+                        } catch (Exception e) {
+                            Toast.makeText(EditorActivity.this, "Error launching preview: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    // JavaScript bridge
+    public class WebAppInterface {
+
+        @JavascriptInterface
+        public void saveRequested(String content) {
+            // Reserved for future auto-save functionality.
+        }
+
+        @JavascriptInterface
+        public void copyText(String text) {
+            ClipboardManager clipboard =
+                (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+    
+            if (clipboard != null) {
+                ClipData clip = ClipData.newPlainText(
+                    "DebugMate", text
+                );
+                clipboard.setPrimaryClip(clip);
+            }
+        }
+    
+        @JavascriptInterface
+        public String getClipboardText() {
+            ClipboardManager clipboard =
+                (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+    
+            if (clipboard != null && clipboard.hasPrimaryClip()) {
+                ClipData clip = clipboard.getPrimaryClip();
+    
+                if (clip != null && clip.getItemCount() > 0) {
+                    CharSequence text = clip.getItemAt(0).getText();
+    
+                    if (text != null) {
+                        return text.toString();
+                    }
+                }
+            }
+    
+            return "";
+        }
+    }
+
+
+    private void setupBottomIcon(
+            TextView view, String unicode, Typeface font) {
+
+        view.setTypeface(font);
+        view.setText(unicode);
+    }
+
+    private void runEditorCommand(String command) {
+        if (editorReady) {
+            codeEditorWebView.evaluateJavascript(command, null);
+        }
+    }
+
+    private void sendCodeToEditor(String code, String extension) {
+        if (!editorReady) {
+            pendingCode = code;
+            pendingExtension = extension;
+            return;
+        }
+
+        String jsCommand = "setCode("
+                + org.json.JSONObject.quote(code)
+                + ", "
+                + org.json.JSONObject.quote(extension)
+                + ");";
+
+        codeEditorWebView.evaluateJavascript(jsCommand, null);
     }
 
     private void loadFile(File file) {
-        if (file == null || !file.exists()) return;
-        
+        if (file == null || !file.exists() || !file.isFile()) {
+            Toast.makeText(
+                    this, "File not found.", Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
         currentFile = file;
-        fileNameView.setText(currentFile.getName());
-        fileNamePath.setText(currentFile.getAbsolutePath());
+
+        fileNameView.setText(file.getName());
+        fileNamePath.setText(file.getAbsolutePath());
 
         try {
             StringBuilder text = new StringBuilder();
-            BufferedReader br = new BufferedReader(new FileReader(currentFile));
-            String line;
-            
-            while ((line = br.readLine()) != null) {
-                text.append(line);
-                text.append('\n');
+
+            try (BufferedReader br = new BufferedReader(
+                    new FileReader(file))) {
+
+                String line;
+
+                while ((line = br.readLine()) != null) {
+                    text.append(line).append('\n');
+                }
             }
-            br.close();
-            
-            codeEditor.setText(text.toString());
-            updateLineNumbers(); 
-            
-            // Force an immediate highlight when opening a new file
-            highlightHandler.removeCallbacks(highlightRunnable);
-            highlightHandler.postDelayed(highlightRunnable, 100);
-            
+
+            String name = file.getName();
+            String ext = "";
+            int dotIndex = name.lastIndexOf('.');
+
+            if (dotIndex != -1 && dotIndex < name.length() - 1) {
+                ext = name.substring(dotIndex + 1).toLowerCase(
+                        java.util.Locale.ROOT);
+            }
+
+            pendingCode = text.toString();
+            pendingExtension = ext;
+
+            if (editorReady) {
+                sendCodeToEditor(pendingCode, pendingExtension);
+                pendingCode = null;
+            }
+
         } catch (Exception e) {
-            Toast.makeText(this, "Error reading file: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(
+                    this,
+                    "Error reading file: " + e.getMessage(),
+                    Toast.LENGTH_LONG
+            ).show();
         }
     }
 
-    private void applySyntaxHighlighting(Editable editable) {
-        if (currentFile == null) return;
-
-        String ext = currentFile.getName();
-        int dotIndex = ext.lastIndexOf(".");
-        if (dotIndex == -1) return;
-        ext = ext.substring(dotIndex + 1).toLowerCase();
-
-        ForegroundColorSpan[] oldSpans = editable.getSpans(0, editable.length(), ForegroundColorSpan.class);
-        for (ForegroundColorSpan span : oldSpans) {
-            editable.removeSpan(span);
+    private void saveCurrentFile() {
+        if (currentFile == null) {
+            Toast.makeText(
+                    this, "No file selected.", Toast.LENGTH_SHORT
+            ).show();
+            return;
         }
 
-        String text = editable.toString();
-
-        if (ext.equals("py")) {
-            highlightPattern(editable, text, "\\b(def|class|import|from|return|if|else|elif|for|while|in|try|except|print|True|False|None|and|or|not)\\b", COLOR_KEYWORD);
-            highlightPattern(editable, text, "\"[^\"]*\"|'[^']*'", COLOR_STRING);
-            highlightPattern(editable, text, "\\b\\d+\\b", COLOR_NUMBER);
-            highlightPattern(editable, text, "#.*", COLOR_COMMENT);
-            
-        } else if (ext.equals("java")) {
-		
-		    // Numbers
-		    highlightPattern(editable, text,
-		        "\\b(?:0[xX][0-9a-fA-F_]+|0[bB][01_]+|\\d[\\d_]*(?:\\.\\d[\\d_]*)?(?:[eE][+-]?\\d[\\d_]*)?[fFdDlL]?)\\b",
-		        COLOR_NUMBER);
-		
-		    highlightPattern(editable, text,
-		        "'(?:\\\\.|[^'\\\\])'", COLOR_CHARACTER);
-		
-		    // Annotations
-		    highlightPattern(editable, text,
-		        "@[A-Za-z_$][A-Za-z0-9_$.]*", COLOR_ANNOTATION);
-		
-		    // Keywords
-		    highlightPattern(editable, text,
-		        "\\b(abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|if|implements|import|instanceof|int|interface|long|native|new|package|private|protected|public|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|transient|try|void|volatile|while|var|yield|record|sealed|permits)\\b",
-		        COLOR_KEYWORD);
-		
-		    // Constants
-		    highlightPattern(editable, text,
-		        "\\b(true|false|null)\\b", COLOR_CONSTANT);
-		
-		    // Common types and classes
-		    highlightPattern(editable, text,
-		        "\\b(String|Object|Integer|Long|Double|Float|Boolean|Character|Byte|Short|Void|Class|System|Thread|Math|Exception|ArrayList|HashMap|List|Map|Set|File|Scanner)\\b",
-		        COLOR_TYPE);
-		
-		    // Method names
-		    highlightPattern(editable, text,
-		        "\\b[A-Za-z_$][A-Za-z0-9_$]*(?=\\s*\\()", COLOR_METHOD);
-		
-		    // Operators
-		    highlightPattern(editable, text,
-		        ">>>=|<<=|>>=|>>>|==|!=|<=|>=|&&|\\|\\||\\+\\+|--|\\+=|-=|\\*=|/=|%=|->|::|[+*/%=<>!&|^~?:-]",
-		        COLOR_OPERATOR);
-		
-		    // Brackets
-		    highlightPattern(editable, text,
-		        "[(){}\\[\\]]", COLOR_BRACKET);
-
-		    // Strings
-		    highlightPattern(editable, text,
-		        "\"(?:(?:\\\\.)|[^\"\\\\])*\"", COLOR_STRING);
-		        
-		    // Comments
-		    highlightPattern(editable, text,
-		        "/\\*[\\s\\S]*?\\*/|//.*", COLOR_COMMENT);
-		        
-        } else if (ext.equals("xml")) {
-            highlightPattern(editable, text, "</?[a-zA-Z0-9_:-]+", COLOR_XML_TAG);
-            highlightPattern(editable, text, "\"[^\"]*\"", COLOR_STRING);
+        if (!editorReady) {
+            Toast.makeText(
+                    this, "Editor is still loading.",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
         }
-    }
 
-    private void highlightPattern(Editable editable, String text, String regex, int color) {
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(text);
-        
-        while (matcher.find()) {
-            editable.setSpan(
-                new ForegroundColorSpan(color), 
-                matcher.start(), 
-                matcher.end(), 
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            );
-        }
+        final File fileToSave = currentFile;
+
+        codeEditorWebView.evaluateJavascript(
+                "getCode();",
+                new android.webkit.ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String result) {
+                        try {
+                            if (result == null || "null".equals(result)) {
+                                throw new Exception(
+                                        "Editor returned no content.");
+                            }
+
+                            // Decode the JSON string returned by WebView.
+                            String cleanCode = new JSONArray(
+                                    "[" + result + "]"
+                            ).getString(0);
+
+                            try (FileWriter writer =
+                                    new FileWriter(fileToSave, false)) {
+                                writer.write(cleanCode);
+                            }
+
+                            Toast.makeText(
+                                    EditorActivity.this,
+                                    "Saved successfully! ✔️",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+
+                        } catch (Exception e) {
+                            Toast.makeText(
+                                    EditorActivity.this,
+                                    "Error saving: " + e.getMessage(),
+                                    Toast.LENGTH_LONG
+                            ).show();
+                        }
+                    }
+                }
+        );
     }
 
     private void buildTabs() {
         tabContainer.removeAllViews();
-        SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+
+        SharedPreferences prefs = getSharedPreferences(
+                "DebugMatePrefs", MODE_PRIVATE);
+
         String recentStr = prefs.getString("recent_files", "");
-        
-        if (recentStr.isEmpty()) return;
+
+        if (recentStr.isEmpty()) {
+            return;
+        }
 
         String[] paths = recentStr.split("\n");
+
         for (final String path : paths) {
             final File f = new File(path);
-            if (!f.exists()) continue;
+
+            if (!f.exists() || !f.isFile()) {
+                continue;
+            }
 
             LinearLayout tabLayout = new LinearLayout(this);
             tabLayout.setOrientation(LinearLayout.HORIZONTAL);
             tabLayout.setGravity(Gravity.CENTER_VERTICAL);
-            tabLayout.setPadding(24, 5, 24, 5);
-            
-            if (currentFile != null && currentFile.getAbsolutePath().equals(path)) {
+            tabLayout.setPadding(24, 0, 9, 0);
+
+            if (currentFile != null
+                    && currentFile.getAbsolutePath().equals(
+                            f.getAbsolutePath())) {
                 tabLayout.setBackgroundResource(R.drawable.tab_active);
-            } else {
+            } /*else {
                 tabLayout.setBackgroundResource(R.drawable.tab_inactive);
-            }
+            }*/
 
             TextView tabName = new TextView(this);
             tabName.setText(f.getName());
             tabName.setTextColor(Color.parseColor("#FFFFFF"));
             tabName.setTextSize(12);
             tabName.setTypeface(appFont);
-            
+
             TextView btnClose = new TextView(this);
             btnClose.setTypeface(solidFont);
             btnClose.setText("\uf00d");
             btnClose.setTextColor(Color.parseColor("#AAAAAA"));
-            btnClose.setTextSize(14);
-            btnClose.setPadding(16, 0, 0, 0);
+            btnClose.setTextSize(16);
+            btnClose.setPadding(15, 10, 15, 10);
 
             tabLayout.addView(tabName);
             tabLayout.addView(btnClose);
@@ -351,14 +482,6 @@ public class EditorActivity extends Activity {
                 public void onClick(View v) {
                     loadFile(f);
                     buildTabs();
-                }
-            });
-
-            tabLayout.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    showFileInfo(f);
-                    return true;
                 }
             });
 
@@ -374,10 +497,13 @@ public class EditorActivity extends Activity {
     }
 
     private void closeTab(String path) {
-        SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences(
+                "DebugMatePrefs", MODE_PRIVATE);
+
         String recentStr = prefs.getString("recent_files", "");
+
         ArrayList<String> list = new ArrayList<>();
-        
+
         for (String s : recentStr.split("\n")) {
             if (!s.equals(path) && !s.isEmpty()) {
                 list.add(s);
@@ -385,46 +511,26 @@ public class EditorActivity extends Activity {
         }
 
         StringBuilder sb = new StringBuilder();
+
         for (String s : list) {
             sb.append(s).append("\n");
         }
-        prefs.edit().putString("recent_files", sb.toString().trim()).apply();
 
-        if (currentFile != null && currentFile.getAbsolutePath().equals(path)) {
+        prefs.edit()
+                .putString("recent_files", sb.toString().trim())
+                .apply();
+
+        if (currentFile != null
+                && currentFile.getAbsolutePath().equals(path)) {
+
             if (list.isEmpty()) {
                 finish();
+                return;
             } else {
                 loadFile(new File(list.get(0)));
             }
         }
+
         buildTabs();
-    }
-
-    private void showFileInfo(File file) {
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault());
-        String dateStr = sdf.format(new Date(file.lastModified()));
-        
-        long size = file.length();
-        String sizeStr = size < 1024 ? size + " B" : (size < 1048576 ? (size / 1024) + " KB" : String.format("%.1f MB", size / 1048576f));
-
-        new AlertDialog.Builder(this)
-            .setTitle(file.getName())
-            .setMessage("Path: " + file.getAbsolutePath() + 
-                        "\n\nSize: " + sizeStr + 
-                        "\n\nLast Modified: " + dateStr)
-            .setPositiveButton("OK", null)
-            .show();
-    }
-    
-    private void updateLineNumbers() {
-        String text = codeEditor.getText().toString();
-        int lines = text.split("\n", -1).length; 
-        
-        StringBuilder sb = new StringBuilder();
-        for (int i = 1; i <= lines; i++) {
-            sb.append(i).append("\n");
-        }
-        
-        lineNumbersView.setText(sb.toString());
     }
 }

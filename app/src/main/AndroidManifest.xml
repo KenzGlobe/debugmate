@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.kenzglobe.debugmate" >
+
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
-
+    <uses-permission android:name="android.permission.INTERNET" />
+    
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
@@ -17,33 +19,46 @@
             android:label="@string/app_name" >
             
             <intent-filter>
-            
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-                
             </intent-filter>
             
         </activity>
         
         <activity android:name=".EditorActivity" />
-        
+        <activity android:name=".ConsoleActivity" />
         <activity android:name=".TerminalActivity" />
+        <activity android:name=".WebBrowserActivity" />
+        <activity android:name=".ProjectListActivity" />
+        <activity android:name=".TemplateGalleryActivity" />
         
         <service
-		    android:name=".CodingKeyboardService"
-		    android:label="DebugMate Keyboard"
-		    android:permission="android.permission.BIND_INPUT_METHOD"
-		    android:exported="true">
-		    
-		    <intent-filter>
-		        <action android:name="android.view.InputMethod" />
-		    </intent-filter>
-		    
-		    <meta-data
-		        android:name="android.view.im"
-		        android:resource="@xml/method" />
-		        
-		</service>
+            android:name=".CodingKeyboardService"
+            android:label="DebugMate Keyboard"
+            android:permission="android.permission.BIND_INPUT_METHOD"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/method" />
+
+        </service>
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+
+        </provider>
         
     </application>
 

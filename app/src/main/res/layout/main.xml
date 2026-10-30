@@ -34,7 +34,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center_vertical"
-                android:text="DebugMate"
+                android:text="@string/app_name"
                 android:textColor="#FFFFFF"
                 android:textSize="20sp" />
 
@@ -44,6 +44,18 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#DDDDDD" />
+            
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:id="@+id/btn_select_folder"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@drawable/fab_bg"
+            android:gravity="center"
+            android:text="Select this folder"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -67,6 +79,8 @@
                 android:id="@+id/file_list"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:paddingBottom="100dp"
+                android:clipToPadding="false"
                 android:visibility="gone" />
                 
             <!-- Floating Action Button for Plus Icon -->
@@ -82,7 +96,239 @@
                 android:focusable="true"
                 android:textColor="#FFFFFF"
                 android:textSize="20sp"
-                android:elevation="6dp" /><!-- OVERLAY POPUP -->
+                android:elevation="6dp" />
+
+            <FrameLayout
+                android:id="@+id/tasks_for_files"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:layout_gravity="bottom"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:gravity="center_vertical"
+                    android:padding="5dp"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/files_share_btn_layout"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_margin="5dp"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/tasks_for_files"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="6dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/files_share_btn"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20sp" />
+
+                        <com.kenzglobe.debugmate.AppBoldTextView
+                            android:id="@+id/files_share_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="Share"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+                        
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/files_copy_btn_layout"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_margin="5dp"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/tasks_for_files"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="6dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/files_copy_btn"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20sp" />
+
+                        <com.kenzglobe.debugmate.AppBoldTextView
+                            android:id="@+id/files_copy_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="Copy"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+                        
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/files_cut_btn_layout"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_margin="5dp"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/tasks_for_files"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="6dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/files_cut_btn"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20sp" />
+
+                        <com.kenzglobe.debugmate.AppBoldTextView
+                            android:id="@+id/files_cut_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="Move"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+                        
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/files_delete_btn_layout"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_margin="5dp"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/tasks_for_files"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="6dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/files_delete_btn"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20sp" />
+
+                        <com.kenzglobe.debugmate.AppBoldTextView
+                            android:id="@+id/files_delete_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="Delete"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+                        
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/files_more_btn_layout"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_margin="5dp"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/tasks_for_files"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="6dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/files_more_btn"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20sp" />
+
+                        <com.kenzglobe.debugmate.AppBoldTextView
+                            android:id="@+id/files_more_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="More"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+                        
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </FrameLayout>
+            
+            <FrameLayout
+                android:id="@+id/more_file_tasks"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="150dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginBottom="80dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@drawable/more_file_tasks"
+                    android:elevation="6dp"
+                    android:orientation="vertical">
+                
+                    <com.kenzglobe.debugmate.AppTextView
+                        style="@style/MoreFileTasks"
+                        android:id="@+id/files_add_as_project_btn"
+                        android:text="Add as Project" />
+                
+                    <com.kenzglobe.debugmate.AppTextView
+                        style="@style/MoreFileTasks"
+                        android:id="@+id/files_rename_btn"
+                        android:text="Rename" />
+                
+                    <com.kenzglobe.debugmate.AppTextView
+                        style="@style/MoreFileTasks"
+                        android:id="@+id/files_open_with_btn"
+                        android:text="Open with" />
+                
+                    <com.kenzglobe.debugmate.AppTextView
+                        style="@style/MoreFileTasks"
+                        android:id="@+id/files_compress_btn"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:text="Compress" />
+                
+                    <com.kenzglobe.debugmate.AppTextView
+                        style="@style/MoreFileTasks"
+                        android:id="@+id/files_uncompress_btn"
+                        android:text="Uncompress" />
+                
+                    <com.kenzglobe.debugmate.AppTextView
+                        style="@style/MoreFileTasks"
+                        android:id="@+id/files_details_btn"
+                        android:text="Details" />
+                    
+                </LinearLayout>
+
+            </FrameLayout>
 
             <FrameLayout
                 android:id="@+id/start_up_layout"
@@ -99,7 +345,7 @@
                     android:background="#80000000" />
 
                 <LinearLayout
-                    android:layout_width="280dp"
+                    android:layout_width="200dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:background="@drawable/start_up_layout"
@@ -113,7 +359,7 @@
                         android:paddingStart="12dp"
                         android:text="Have a project?"
                         android:textColor="#8B5CF6"
-                        android:textSize="15sp"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
                 
                     <View
@@ -123,7 +369,7 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="40dp"
+                        android:layout_height="50dp"
                         android:orientation="horizontal">
 
                         <TextView
@@ -142,13 +388,13 @@
                             android:gravity="center_vertical"
                             android:text="Create Project"
                             android:textColor="#AAAAAA"
-                            android:textSize="16sp" />
+                            android:textSize="15sp" />
 
                     </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="40dp"
+                        android:layout_height="50dp"
                         android:orientation="horizontal">
 
                         <TextView
@@ -167,13 +413,13 @@
                             android:gravity="center_vertical"
                             android:text="Import Project"
                             android:textColor="#AAAAAA"
-                            android:textSize="16sp" />
+                            android:textSize="15sp" />
 
                     </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="40dp"
+                        android:layout_height="50dp"
                         android:orientation="horizontal">
 
                         <TextView
@@ -192,7 +438,7 @@
                             android:gravity="center_vertical"
                             android:text="Clone from Git"
                             android:textColor="#AAAAAA"
-                            android:textSize="16sp" />
+                            android:textSize="15sp" />
 
                     </LinearLayout>
                 
@@ -238,7 +484,7 @@
     <!-- THE NAVIGATION DRAWER                      -->
     <!-- ========================================== -->
     <LinearLayout
-        android:layout_width="280dp"
+        android:layout_width="300dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:background="#262626"
@@ -256,7 +502,7 @@
                 android:layout_height="40dp"
                 android:layout_marginStart="10dp"
                 android:gravity="center_vertical"
-                android:text="DebugMate"
+                android:text="@string/app_name"
                 android:textColor="#FFFFFF"
                 android:textSize="20sp" />
 
@@ -269,6 +515,7 @@
         
         <!-- SECTION 1: Files Manager -->
         <LinearLayout
+            android:id="@+id/storage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -279,7 +526,7 @@
                 android:layout_height="30dp"
                 android:layout_marginStart="10dp"
                 android:gravity="center_vertical"
-                android:text="Files Manager"
+                android:text="Storage"
                 android:textColor="#8B5CF6"
                 android:textSize="15sp" />
         
@@ -305,7 +552,91 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center_vertical"
-                    android:text="Phone Storage"
+                    android:text="Internal Storage"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+        
+            <LinearLayout
+                android:id="@+id/nav_item_app_files"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_app_files"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <com.kenzglobe.debugmate.AppTextView
+                    android:id="@+id/nav_app_files"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="App Files"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+        
+            <LinearLayout
+                android:id="@+id/nav_item_app_cache"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_app_cache"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <com.kenzglobe.debugmate.AppTextView
+                    android:id="@+id/nav_app_cache"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="App Cache"
+                    android:textColor="#BBBBBB"
+                    android:textSize="15sp" />
+                    
+            </LinearLayout>
+        
+            <LinearLayout
+                android:id="@+id/nav_item_saf"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:background="?android:attr/selectableItemBackground">
+                
+                <TextView
+                    android:id="@+id/icon_saf"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:textColor="#BBBBBB"
+                    android:textSize="16sp" />
+                
+                <com.kenzglobe.debugmate.AppTextView
+                    android:id="@+id/nav_saf"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="Storage Access Framework (SAF)"
                     android:textColor="#BBBBBB"
                     android:textSize="15sp" />
                     
@@ -348,6 +679,7 @@
         
         <!-- SECTION 2: Shell -->
         <LinearLayout
+            android:id="@+id/shell"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -455,6 +787,7 @@
         
         <!-- SECTION 3: Learn -->
         <LinearLayout
+            android:id="@+id/learn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -534,6 +867,7 @@
         
         <!-- SECTION 4: Settings -->
         <LinearLayout
+            android:id="@+id/settings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
