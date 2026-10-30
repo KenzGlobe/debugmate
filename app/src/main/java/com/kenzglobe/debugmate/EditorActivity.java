@@ -14,6 +14,8 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
+import android.widget.AdapterView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,7 +31,12 @@ public class EditorActivity extends Activity {
 
     private File currentFile;
     private WebView codeEditorWebView;
-
+    private android.support.v4.widget.DrawerLayout editorDrawer;
+    private ListView treeList;
+    private TextView treeRootName, treeUpBtn;
+    private File treeCurrentDir;
+    private EditorTreeAdapter treeAdapter;
+    private ArrayList<File> treeFiles = new ArrayList<>();
     private boolean editorReady = false;
     private String pendingCode = null;
     private String pendingExtension = "text";
@@ -83,6 +90,48 @@ public class EditorActivity extends Activity {
 
         fileNameView.setTypeface(appFont);
         fileNamePath.setTypeface(appFont);
+        
+        editorDrawer = findViewById(R.id.editor_drawer);
+        treeList = findViewById(R.id.tree_list);
+        treeRootName = findViewById(R.id.tree_root_name);
+        treeUpBtn = findViewById(R.id.tree_up_btn);
+        
+        treeRootName.setTypeface(appFont);
+        treeUpBtn.setTypeface(solidFont);
+        treeUpBtn.setText("\uf062"); // Arrow Up icon
+        
+        // Open drawer when sidebar button is clicked
+        sideBarBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                editorDrawer.openDrawer(Gravity.LEFT);
+            }
+        });
+
+        // Navigate up the tree
+        treeUpBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (treeCurrentDir != null && treeCurrentDir.getParentFile() != null) {
+                    loadTree(treeCurrentDir.getParentFile());
+                }
+            }
+        });
+
+        // Handle file clicks in the tree
+        treeList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                File clickedFile = treeFiles.get(position);
+                if (clickedFile.isDirectory()) {
+                    loadTree(clickedFile);
+                } else {
+                    loadFile(clickedFile);
+                    buildTabs();
+                    editorDrawer.closeDrawer(Gravity.LEFT);
+                }
+            }
+        });
 
         // Configure WebView before loading the editor page.
         codeEditorWebView.getSettings().setJavaScriptEnabled(true);
@@ -287,7 +336,32 @@ public class EditorActivity extends Activity {
             return "";
         }
     }
+    
+    private void loadTree(File dir) {
+        if (dir == null) return;
+    
+        treeCurrentDir = dir;
+        treeRootName.setText(dir.getName());
+        treeFiles.clear();
 
+        File[] files = dir.listFiles();
+        if (files != null) {
+            java.util.Arrays.sort(files, new java.util.Comparator<File>() {
+                @Override
+                public int compare(File f1, File f2) {
+                    if (f1.isDirectory() && !f2.isDirectory()) return -1;
+                    if (!f1.isDirectory() && f2.isDirectory()) return 1;
+                    return f1.getName().compareToIgnoreCase(f2.getName());
+                }
+            });
+            for (File f : files) {
+                treeFiles.add(f);
+            }
+        }
+
+        treeAdapter = new EditorTreeAdapter(this, treeFiles, currentFile);
+        treeList.setAdapter(treeAdapter);
+    }
 
     private void setupBottomIcon(
             TextView view, String unicode, Typeface font) {
@@ -359,6 +433,16 @@ public class EditorActivity extends Activity {
             if (editorReady) {
                 sendCodeToEditor(pendingCode, pendingExtension);
                 pendingCode = null;
+            }
+            
+            // Update the tree if it's currently open
+            if (treeCurrentDir == null || !file.getParentFile().getAbsolutePath().equals(treeCurrentDir.getAbsolutePath())) {
+                loadTree(file.getParentFile());
+            } else {
+                // Just refresh the adapter to highlight the new file
+                if (treeAdapter != null) {
+                    treeAdapter.notifyDataSetChanged();
+                }
             }
 
         } catch (Exception e) {
@@ -532,5 +616,14 @@ public class EditorActivity extends Activity {
         }
 
         buildTabs();
+    }
+    
+    @Override
+    public void onBackPressed() {
+        if (editorDrawer.isDrawerOpen(Gravity.LEFT)) {
+            editorDrawer.closeDrawer(Gravity.LEFT);
+        } else {
+            super.onBackPressed();
+        }
     }
 }

@@ -251,7 +251,7 @@ public class FileListAdapter extends ArrayAdapter<FileItem> {
         return convertView;
     }
 
-    private String formatSize(long bytes){
+    private String formatSize(long bytes) {
         if (bytes < 1024) return bytes + " B";
         if (bytes < 1024*1024) return (bytes/1024) + " KB";
         return String.format("%.1f MB", bytes/1024f/1024f);

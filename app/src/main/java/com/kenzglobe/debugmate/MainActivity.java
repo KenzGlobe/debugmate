@@ -51,6 +51,7 @@ public class MainActivity extends Activity {
     private boolean isSelectionMode = false;
     private DrawerLayout drawerLayout;
     private File currentDirectory = null;
+    private String startDirectoryPath = null;
     private long backPressedTime = 0;
     
     private FrameLayout startUpLayout,
@@ -218,9 +219,9 @@ public class MainActivity extends Activity {
             });
         }
         
-        String startDir = getIntent().getStringExtra("START_DIRECTORY");
-        if (startDir != null) {
-            currentDirectory = new File(startDir);
+        startDirectoryPath = getIntent().getStringExtra("START_DIRECTORY");
+        if (startDirectoryPath != null) {
+            currentDirectory = new File(startDirectoryPath);
         }
         
         navItemFileManager = findViewById(R.id.nav_item_file_manager);
@@ -392,6 +393,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 drawerLayout.closeDrawer(Gravity.LEFT);
+                startDirectoryPath = null; // Clear sandbox
                 currentDirectory = Environment.getExternalStorageDirectory();
                 loadDirectory(currentDirectory);
             }
@@ -401,6 +403,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 drawerLayout.closeDrawer(Gravity.LEFT);
+                startDirectoryPath = null; // Clear sandbox
                 File appFilesDir = getExternalFilesDir(null);
                 if (appFilesDir != null) {
                     if (!appFilesDir.exists()) appFilesDir.mkdirs();
@@ -416,6 +419,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 drawerLayout.closeDrawer(Gravity.LEFT);
+                startDirectoryPath = null; // Clear sandbox
                 File cacheDir = getCacheDir();
                 if (cacheDir != null) {
                     currentDirectory = cacheDir;
@@ -847,7 +851,14 @@ public class MainActivity extends Activity {
     }
     
     private void parentFolderNavigation(File dir) {
+        
         if (dir == null) return;
+
+        if (startDirectoryPath != null && dir.getAbsolutePath().equals(startDirectoryPath)) {
+            finish();
+            return;
+        }
+
         File parentDir = dir.getParentFile();
 
         if (parentDir == null) {
