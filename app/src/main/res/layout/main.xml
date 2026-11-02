@@ -33,10 +33,20 @@
                 android:id="@+id/app_name"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:layout_weight="1"
                 android:gravity="center_vertical"
                 android:text="@string/app_name"
                 android:textColor="#FFFFFF"
                 android:textSize="20sp" />
+
+            <TextView
+                android:id="@+id/workspace_btn"
+                android:layout_width="55dp"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:visibility="gone" />
 
         </LinearLayout>
         
@@ -63,16 +73,93 @@
             android:background="#262626">
 
             <!-- Welcome Screen (Visible when no folder is selected) -->
-            <TextView
+            <LinearLayout
                 android:id="@+id/welcome_message"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:orientation="vertical"
                 android:gravity="center"
                 android:padding="32dp"
-                android:text="Welcome to DebugMate\n\nOpen the sidebar to load Phone Storage or Projects."
-                android:textColor="#888888"
-                android:textSize="16sp"
-                android:lineSpacingExtra="8dp" />
+                android:visibility="visible">
+
+                <ImageView
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:src="@drawable/welcome_image"
+                    android:alpha="0.9" />
+
+                <com.kenzglobe.debugmate.AppBoldTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="Welcome to DebugMate"
+                    android:textColor="#FFFFFF"
+                    android:textSize="24sp" />
+
+                <com.kenzglobe.debugmate.AppTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:text="Open the sidebar to load Phone Storage\nor access your saved Projects."
+                    android:textColor="#AAAAAA"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="6dp" />
+
+                <View
+                    android:layout_width="50dp"
+                    android:layout_height="1dp"
+                    android:background="#444444"
+                    android:layout_marginTop="32dp"
+                    android:layout_marginBottom="32dp" />
+
+                <com.kenzglobe.debugmate.AppTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="💡 Tip: Long-press any file or folder\nfor advanced options like Compress or Git."
+                    android:textColor="#8B5CF6"
+                    android:textSize="12sp"
+                    android:lineSpacingExtra="4dp" />
+                    
+            </LinearLayout>
+
+            <!-- Empty Folder Animation Screen -->
+            <LinearLayout
+                android:id="@+id/empty_folder_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/empty_icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#555555"
+                    android:textSize="80sp" />
+
+                <com.kenzglobe.debugmate.AppBoldTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="This folder is empty"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp" />
+
+                <com.kenzglobe.debugmate.AppTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:text="Tap the + button below to create\na new file or folder."
+                    android:textColor="#888888"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="4dp" />
+                    
+            </LinearLayout>
 
             <!-- The List of Files (Hidden until a folder is opened) -->
             <ListView
@@ -345,7 +432,7 @@
                     android:background="#80000000" />
 
                 <LinearLayout
-                    android:layout_width="200dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:background="@drawable/start_up_layout"
@@ -368,9 +455,13 @@
                         android:background="#333333" />
 
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="50dp"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:paddingEnd="20dp"
+                        android:background="?android:attr/selectableItemBackground">
 
                         <TextView
                             android:id="@+id/create_project_icon"
@@ -393,9 +484,13 @@
                     </LinearLayout>
 
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="50dp"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:paddingEnd="20dp"
+                        android:background="?android:attr/selectableItemBackground">
 
                         <TextView
                             android:id="@+id/import_project_icon"
@@ -418,9 +513,13 @@
                     </LinearLayout>
 
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="50dp"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:paddingEnd="20dp"
+                        android:background="?android:attr/selectableItemBackground">
 
                         <TextView
                             android:id="@+id/clone_from_git_icon"
@@ -459,7 +558,8 @@
                             android:layout_weight="1"
                             android:gravity="center"
                             android:textColor="#AAAAAA"
-                            android:textSize="20sp" />
+                            android:textSize="20sp"
+                            android:background="?android:attr/selectableItemBackground" />
 
                         <TextView
                             android:id="@+id/create_file_btn"
@@ -468,7 +568,8 @@
                             android:layout_weight="1"
                             android:gravity="center"
                             android:textColor="#AAAAAA"
-                            android:textSize="20sp" />
+                            android:textSize="20sp"
+                            android:background="?android:attr/selectableItemBackground" />
 
                     </LinearLayout>
             
@@ -489,485 +590,526 @@
         android:layout_gravity="start"
         android:background="#262626"
         android:orientation="vertical">
-        
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:background="#8B5CF6"
-            android:orientation="vertical">
-            
-            <TextView
-                android:id="@+id/nav_bar_app_name"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_marginStart="10dp"
-                android:gravity="center_vertical"
-                android:text="@string/app_name"
-                android:textColor="#FFFFFF"
-                android:textSize="20sp" />
 
-        </LinearLayout>
-        
-        <View
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#888888" />
-        
-        <!-- SECTION 1: Files Manager -->
-        <LinearLayout
-            android:id="@+id/storage"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-            
-            <TextView
-                android:id="@+id/nav_bar_section_one"
-                android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:layout_marginStart="10dp"
-                android:gravity="center_vertical"
-                android:text="Storage"
-                android:textColor="#8B5CF6"
-                android:textSize="15sp" />
-        
-            <LinearLayout
-                android:id="@+id/nav_item_file_manager"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
-                
-                <TextView
-                    android:id="@+id/icon_file_manager"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
-                
-                <TextView
-                    android:id="@+id/nav_file_manager"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="Internal Storage"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
-                    
-            </LinearLayout>
-        
-            <LinearLayout
-                android:id="@+id/nav_item_app_files"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
-                
-                <TextView
-                    android:id="@+id/icon_app_files"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
-                
-                <com.kenzglobe.debugmate.AppTextView
-                    android:id="@+id/nav_app_files"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="App Files"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
-                    
-            </LinearLayout>
-        
-            <LinearLayout
-                android:id="@+id/nav_item_app_cache"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
-                
-                <TextView
-                    android:id="@+id/icon_app_cache"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
-                
-                <com.kenzglobe.debugmate.AppTextView
-                    android:id="@+id/nav_app_cache"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="App Cache"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
-                    
-            </LinearLayout>
-        
-            <LinearLayout
-                android:id="@+id/nav_item_saf"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
-                
-                <TextView
-                    android:id="@+id/icon_saf"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
-                
-                <com.kenzglobe.debugmate.AppTextView
-                    android:id="@+id/nav_saf"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="Storage Access Framework (SAF)"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
-                    
-            </LinearLayout>
-        
-            <LinearLayout
-                android:id="@+id/nav_item_projects"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
-                
-                <TextView
-                    android:id="@+id/icon_projects"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
-                
-                <TextView
-                    android:id="@+id/nav_projects"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="Projects"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
-                    
-            </LinearLayout>
-            
-        </LinearLayout>
-        
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#333333" />
-        
-        <!-- SECTION 2: Shell -->
-        <LinearLayout
-            android:id="@+id/shell"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-            
-            <TextView
-                android:id="@+id/nav_bar_section_two"
-                android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:layout_marginStart="10dp"
-                android:gravity="center_vertical"
-                android:text="Shell"
-                android:textColor="#8B5CF6"
-                android:textSize="15sp" />
-        
-            <LinearLayout
-                android:id="@+id/nav_item_terminal"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
-                
-                <TextView
-                    android:id="@+id/icon_terminal"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
-                
-                <TextView
-                    android:id="@+id/nav_terminal"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="Terminal"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
-                    
-            </LinearLayout>
-        
-            <LinearLayout
-                android:id="@+id/nav_item_console"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
-                
-                <TextView
-                    android:id="@+id/icon_console"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
-                
-                <TextView
-                    android:id="@+id/nav_console"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="Console"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
-                    
-            </LinearLayout>
+            android:layout_height="match_parent">
 
             <LinearLayout
-                android:id="@+id/nav_item_workspace"
                 android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
-                
-                <TextView
-                    android:id="@+id/icon_workspace"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
-                
-                <TextView
-                    android:id="@+id/nav_workspace"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+        
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="Workspace"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
+                    android:layout_height="40dp"
+                    android:background="#8B5CF6"
+                    android:orientation="vertical">
                     
-            </LinearLayout>
-            
-        </LinearLayout>
+                    <TextView
+                        android:id="@+id/nav_bar_app_name"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="10dp"
+                        android:gravity="center_vertical"
+                        android:text="@string/app_name"
+                        android:textColor="#FFFFFF"
+                        android:textSize="20sp" />
         
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#333333" />
-        
-        <!-- SECTION 3: Learn -->
-        <LinearLayout
-            android:id="@+id/learn"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-            
-            <TextView
-                android:id="@+id/nav_bar_section_three"
-                android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:layout_marginStart="10dp"
-                android:gravity="center_vertical"
-                android:text="Learn"
-                android:textColor="#8B5CF6"
-                android:textSize="15sp" />
-        
-            <LinearLayout
-                android:id="@+id/nav_item_learn"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
+                </LinearLayout>
                 
-                <TextView
-                    android:id="@+id/icon_learn"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
-                
-                <TextView
-                    android:id="@+id/nav_learn"
+                <View
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="Learn Hub"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
-                    
-            </LinearLayout>
-        
-            <LinearLayout
-                android:id="@+id/nav_item_cheatsheets"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
+                    android:layout_height="1dp"
+                    android:background="#FFFFFF" />
                 
-                <TextView
-                    android:id="@+id/icon_cheatsheets"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
-                
-                <TextView
-                    android:id="@+id/nav_cheatsheets"
+                <!-- SECTION 1: Files Manager -->
+                <LinearLayout
+                    android:id="@+id/storage"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="Cheat Sheets"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
                     
-            </LinearLayout>
-            
-        </LinearLayout>
-        
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#333333" />
-        
-        <!-- SECTION 4: Settings -->
-        <LinearLayout
-            android:id="@+id/settings"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-            
-            <TextView
-                android:id="@+id/nav_bar_section_four"
-                android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:layout_marginStart="10dp"
-                android:gravity="center_vertical"
-                android:text="Settings"
-                android:textColor="#8B5CF6"
-                android:textSize="15sp" />
-        
-            <LinearLayout
-                android:id="@+id/nav_item_app_settings"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
+                    <TextView
+                        android:id="@+id/nav_bar_section_one"
+                        android:layout_width="match_parent"
+                        android:layout_height="30dp"
+                        android:layout_marginStart="10dp"
+                        android:gravity="center_vertical"
+                        android:text="Storage"
+                        android:textColor="#8B5CF6"
+                        android:textSize="15sp" />
                 
-                <TextView
-                    android:id="@+id/icon_app_settings"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
+                    <LinearLayout
+                        android:id="@+id/nav_item_file_manager"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_file_manager"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <TextView
+                            android:id="@+id/nav_file_manager"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="Internal Storage"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
                 
-                <TextView
-                    android:id="@+id/nav_app_settings"
+                    <LinearLayout
+                        android:id="@+id/nav_item_app_files"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_app_files"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <com.kenzglobe.debugmate.AppTextView
+                            android:id="@+id/nav_app_files"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="App Files"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+                
+                    <LinearLayout
+                        android:id="@+id/nav_item_app_cache"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_app_cache"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <com.kenzglobe.debugmate.AppTextView
+                            android:id="@+id/nav_app_cache"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="App Cache"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+                
+                    <LinearLayout
+                        android:id="@+id/nav_item_saf"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_saf"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <com.kenzglobe.debugmate.AppTextView
+                            android:id="@+id/nav_saf"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="Storage Access Framework (SAF)"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+                
+                    <LinearLayout
+                        android:id="@+id/nav_item_projects"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_projects"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <TextView
+                            android:id="@+id/nav_projects"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="Projects"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+                    
+                </LinearLayout>
+                
+                <View
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="App Settings"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
-                    
-            </LinearLayout>
-        
-            <LinearLayout
-                android:id="@+id/nav_item_editor_settings"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
+                    android:layout_height="2dp"
+                    android:background="#333333" />
                 
-                <TextView
-                    android:id="@+id/icon_editor_settings"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
-                
-                <TextView
-                    android:id="@+id/nav_editor_settings"
+                <!-- SECTION 2: Shell -->
+                <LinearLayout
+                    android:id="@+id/shell"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="Editor Settings"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
                     
-            </LinearLayout>
-        
-            <LinearLayout
-                android:id="@+id/nav_item_terminal_settings"
-                android:layout_width="match_parent"
-                android:layout_height="45dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:background="?android:attr/selectableItemBackground">
+                    <TextView
+                        android:id="@+id/nav_bar_section_two"
+                        android:layout_width="match_parent"
+                        android:layout_height="30dp"
+                        android:layout_marginStart="10dp"
+                        android:gravity="center_vertical"
+                        android:text="Shell"
+                        android:textColor="#8B5CF6"
+                        android:textSize="15sp" />
                 
-                <TextView
-                    android:id="@+id/icon_terminal_settings"
-                    android:layout_width="30dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:textColor="#BBBBBB"
-                    android:textSize="16sp" />
+                    <LinearLayout
+                        android:id="@+id/nav_item_terminal"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_terminal"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <TextView
+                            android:id="@+id/nav_terminal"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="Terminal"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
                 
-                <TextView
-                    android:id="@+id/nav_terminal_settings"
+                    <LinearLayout
+                        android:id="@+id/nav_item_console"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_console"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <TextView
+                            android:id="@+id/nav_console"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="Console"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/nav_item_workspace"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_workspace"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <TextView
+                            android:id="@+id/nav_workspace"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="Workspace"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+                            
+                    <LinearLayout
+                        android:id="@+id/nav_item_git"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_git"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <TextView
+                            android:id="@+id/nav_git"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="Git Manager"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+                    
+                </LinearLayout>
+                
+                <View
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:text="Terminal Settings"
-                    android:textColor="#BBBBBB"
-                    android:textSize="15sp" />
+                    android:layout_height="2dp"
+                    android:background="#333333" />
+                
+                <!-- SECTION 3: Learn -->
+                <LinearLayout
+                    android:id="@+id/learn"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
                     
+                    <TextView
+                        android:id="@+id/nav_bar_section_three"
+                        android:layout_width="match_parent"
+                        android:layout_height="30dp"
+                        android:layout_marginStart="10dp"
+                        android:gravity="center_vertical"
+                        android:text="Learn"
+                        android:textColor="#8B5CF6"
+                        android:textSize="15sp" />
+                
+                    <LinearLayout
+                        android:id="@+id/nav_item_learn"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_learn"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <TextView
+                            android:id="@+id/nav_learn"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="Learn Hub"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+                
+                    <LinearLayout
+                        android:id="@+id/nav_item_cheatsheets"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_cheatsheets"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <TextView
+                            android:id="@+id/nav_cheatsheets"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="Cheat Sheets"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+                    
+                </LinearLayout>
+                
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:background="#333333" />
+                
+                <!-- SECTION 4: Settings -->
+                <LinearLayout
+                    android:id="@+id/settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    
+                    <TextView
+                        android:id="@+id/nav_bar_section_four"
+                        android:layout_width="match_parent"
+                        android:layout_height="30dp"
+                        android:layout_marginStart="10dp"
+                        android:gravity="center_vertical"
+                        android:text="Settings"
+                        android:textColor="#8B5CF6"
+                        android:textSize="15sp" />
+                
+                    <LinearLayout
+                        android:id="@+id/nav_item_app_settings"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_app_settings"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <TextView
+                            android:id="@+id/nav_app_settings"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="App Settings"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+                
+                    <LinearLayout
+                        android:id="@+id/nav_item_editor_settings"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_editor_settings"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <TextView
+                            android:id="@+id/nav_editor_settings"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="Editor Settings"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+                
+                    <LinearLayout
+                        android:id="@+id/nav_item_terminal_settings"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="20dp"
+                        android:background="?android:attr/selectableItemBackground">
+                        
+                        <TextView
+                            android:id="@+id/icon_terminal_settings"
+                            android:layout_width="30dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:textColor="#BBBBBB"
+                            android:textSize="16sp" />
+                        
+                        <TextView
+                            android:id="@+id/nav_terminal_settings"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="Terminal Settings"
+                            android:textColor="#BBBBBB"
+                            android:textSize="15sp" />
+                            
+                    </LinearLayout>
+                    
+                </LinearLayout>
+                
             </LinearLayout>
-            
-        </LinearLayout>
-        
+
+        </ScrollView>
+     
     </LinearLayout>
     
 </android.support.v4.widget.DrawerLayout>

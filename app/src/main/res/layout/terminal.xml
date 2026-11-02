@@ -3,50 +3,163 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#1E1E1E"
-    android:padding="8dp">
+    android:background="#000000">
 
-    <!-- This will hold the output history -->
+    <!-- Top Bar with Back Arrow (Purple) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:background="#8B5CF6"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/back_btn"
+            android:layout_width="55dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp" />
+
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Terminal"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp" />
+            
+        <TextView
+            android:id="@+id/btn_terminal_settings"
+            android:layout_width="55dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp" />
+            
+    </LinearLayout>
+        
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#DDDDDD" />
+
+    <!-- Output History -->
     <ScrollView
         android:id="@+id/scroll_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:fadeScrollbars="false">
 
         <LinearLayout
             android:id="@+id/output_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical" />
+            
     </ScrollView>
 
-    <!-- The input line -->
+    <!-- Bottom Input + Extra Keys (Termux Style) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:layout_marginTop="8dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="$ "
-            android:textColor="#3FB950"
-            android:textSize="16sp"
-            android:fontFamily="monospace"
-            android:textStyle="bold" />
+        <!-- Extra Keys Row -->
+        <LinearLayout
+            android:id="@+id/extra_keys_layout"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:orientation="vertical"
+            android:background="#8B5CF6">
+            
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#FFFFFF" />
 
-        <EditText
-            android:id="@+id/terminal_input"
-            android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView style="@style/TermuxKey" android:text="ESC" />
+                <TextView style="@style/TermuxKey" android:text="/" />
+                <TextView style="@style/TermuxKey" android:text="—" />
+                <TextView style="@style/TermuxKey" android:text="HOME" />
+                <TextView android:id="@+id/key_up" style="@style/TermuxKey" />
+                <TextView style="@style/TermuxKey" android:text="END" />
+                <TextView style="@style/TermuxKey" android:text="PGUP" />
+                
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView style="@style/TermuxKey" android:text="TAB" />
+                <TextView style="@style/TermuxKey" android:text="CTRL" />
+                <TextView style="@style/TermuxKey" android:text="ALT" />
+                <TextView android:id="@+id/key_left" style="@style/TermuxKey" />
+                <TextView android:id="@+id/key_down" style="@style/TermuxKey" />
+                <TextView android:id="@+id/key_right" style="@style/TermuxKey" />
+                <TextView style="@style/TermuxKey" android:text="PGDN" />
+                
+            </LinearLayout>
+            
+        </LinearLayout>
+
+        <!-- Input Line -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@null"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:fontFamily="monospace"
-            android:inputType="text"
-            android:imeOptions="actionDone" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="4dp">
+
+            <TextView
+                android:id="@+id/terminal_prompt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="~ $"
+                android:textColor="#3FB950"
+                android:textSize="14sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:maxWidth="200dp"
+                android:singleLine="true"
+                android:ellipsize="start" />
+
+            <EditText
+                android:id="@+id/terminal_input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@null"
+                android:textColor="#E6E6E6"
+                android:textSize="14sp"
+                android:fontFamily="monospace"
+                android:inputType="text|textNoSuggestions"
+                android:imeOptions="actionDone" />
+
+            <!-- Send Button -->
+            <TextView
+                android:id="@+id/send_btn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:textColor="#3FB950"
+                android:textSize="18sp" />
+                
+        </LinearLayout>
+        
     </LinearLayout>
-
+    
 </LinearLayout>

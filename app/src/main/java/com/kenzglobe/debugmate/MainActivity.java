@@ -5,12 +5,12 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Environment;
 import android.net.Uri;
-import android.widget.Toast;
 import android.widget.ListView;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
     private boolean isPickerMode = false;
     private String pendingTemplateType = "";
     private String pendingTemplateName = "";
-    private TextView btnSelectFolder;
+    private TextView btnSelectFolder, emptyIcon, workspaceBtn;
     private ListView fileListView; 
     private View popupDimView;
     private ArrayList<FileItem> fileList;
@@ -71,8 +71,9 @@ public class MainActivity extends Activity {
         navItemProjects,
         navItemTerminal,
         navItemConsole,
-        navItemWorkspace;
-    private LinearLayout navItemLearn,
+        navItemWorkspace,
+        navItemGit,
+        navItemLearn,
         navItemCheatsheets,
         navItemAppSettings,
         navItemEditorSettings,
@@ -107,7 +108,8 @@ public class MainActivity extends Activity {
         solidFont,
         brandsRegularFont;
     
-    private TextView welcomeMessage;
+    private LinearLayout welcomeMessage,
+        emptyFolderLayout;
     
     // Sidebar Variables
     private TextView navBarSectionOne,
@@ -135,7 +137,8 @@ public class MainActivity extends Activity {
         navProjects,
         navTerminal,
         navConsole,
-        navWorkspace;
+        navWorkspace,
+        navGit;
     private TextView navLearn,
         navCheatsheets,
         navAppSettings,
@@ -148,7 +151,8 @@ public class MainActivity extends Activity {
         iconProjects,
         iconTerminal,
         iconConsole,
-        iconWorkspace;
+        iconWorkspace,
+        iconGit;
     private TextView iconLearn,
         iconCheatsheets,
         iconAppSettings,
@@ -171,6 +175,9 @@ public class MainActivity extends Activity {
         
         // Initialize Views
         welcomeMessage = findViewById(R.id.welcome_message);
+        emptyFolderLayout = findViewById(R.id.empty_folder_layout);
+        emptyIcon = findViewById(R.id.empty_icon);
+        workspaceBtn = findViewById(R.id.workspace_btn);
         startUpLayout = findViewById(R.id.start_up_layout);
         popupDimView = findViewById(R.id.popup_dim_view);
         navBarSectionOne = findViewById(R.id.nav_bar_section_one);
@@ -202,21 +209,23 @@ public class MainActivity extends Activity {
         pendingTemplateName = getIntent().getStringExtra("TEMPLATE_NAME");
 
         if (isPickerMode) {
-            appName.setText("Select Destination Folder");
-            fabAdd.setVisibility(View.GONE);
-            btnSelectFolder.setVisibility(View.VISIBLE);
+            if (appName != null) appName.setText("Select Destination Folder");
+            if (fabAdd != null) fabAdd.setVisibility(View.GONE);
+            if (btnSelectFolder != null) btnSelectFolder.setVisibility(View.VISIBLE);
     
-            btnSelectFolder.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (currentDirectory != null) {
-                        android.content.Intent returnIntent = new android.content.Intent();
-                        returnIntent.putExtra("SELECTED_PATH", currentDirectory.getAbsolutePath());
-                        setResult(RESULT_OK, returnIntent);
-                        finish();
+            if (btnSelectFolder != null) {
+                btnSelectFolder.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (currentDirectory != null) {
+                            android.content.Intent returnIntent = new android.content.Intent();
+                            returnIntent.putExtra("SELECTED_PATH", currentDirectory.getAbsolutePath());
+                            setResult(RESULT_OK, returnIntent);
+                            finish();
+                        }
                     }
-                }
-            });
+                });
+            }
         }
         
         startDirectoryPath = getIntent().getStringExtra("START_DIRECTORY");
@@ -229,15 +238,22 @@ public class MainActivity extends Activity {
         navItemAppCache = findViewById(R.id.nav_item_app_cache);
         navItemSAF = findViewById(R.id.nav_item_saf);
         navItemWorkspace = findViewById(R.id.nav_item_workspace);
+        navItemGit = findViewById(R.id.nav_item_git);
         navItemProjects = findViewById(R.id.nav_item_projects);
         navItemTerminal = findViewById(R.id.nav_item_terminal);
         navItemConsole = findViewById(R.id.nav_item_console);
+        navItemLearn = findViewById(R.id.nav_item_learn);
+        navItemCheatsheets = findViewById(R.id.nav_item_cheatsheets);
+        navItemAppSettings = findViewById(R.id.nav_item_app_settings);
+        navItemEditorSettings = findViewById(R.id.nav_item_editor_settings);
+        navItemTerminalSettings = findViewById(R.id.nav_item_terminal_settings);
         
         navFileManager = findViewById(R.id.nav_file_manager);
         navProjects = findViewById(R.id.nav_projects);
         navTerminal = findViewById(R.id.nav_terminal);
         navConsole = findViewById(R.id.nav_console);
         navWorkspace = findViewById(R.id.nav_workspace);
+        navGit = findViewById(R.id.nav_git);
         navLearn = findViewById(R.id.nav_learn);
         navCheatsheets = findViewById(R.id.nav_cheatsheets);
         navAppSettings = findViewById(R.id.nav_app_settings);
@@ -252,6 +268,7 @@ public class MainActivity extends Activity {
         iconAppCache = findViewById(R.id.icon_app_cache);
         iconSAF = findViewById(R.id.icon_saf);
         iconWorkspace = findViewById(R.id.icon_workspace);
+        iconGit = findViewById(R.id.icon_git);
         iconLearn = findViewById(R.id.icon_learn);
         iconCheatsheets = findViewById(R.id.icon_cheatsheets);
         iconAppSettings = findViewById(R.id.icon_app_settings);
@@ -264,23 +281,21 @@ public class MainActivity extends Activity {
         solidFont = Typeface.createFromAsset(getAssets(), "fonts/fa-solid-900-v5.ttf");
         brandsRegularFont = Typeface.createFromAsset(getAssets(), "fonts/fa-brands-regular-400-v5.ttf");
         
-        appName.setTypeface(appFontBold);
-        haveAProject.setTypeface(appFontBold);
-        navBarAppName.setTypeface(appFontBold);
-        navBarSectionOne.setTypeface(appFontBold);
-        navBarSectionTwo.setTypeface(appFontBold);
-        navBarSectionThree.setTypeface(appFontBold);
-        navBarSectionFour.setTypeface(appFontBold);
-        sideBarBtn.setTypeface(solidFont);
-        createFolderBtn.setTypeface(solidFont);
-        createFileBtn.setTypeface(solidFont);
-        fabAdd.setTypeface(solidFont);
-        createProjectBtn.setTypeface(appFontRegular);
-        importProjectBtn.setTypeface(appFontRegular);
-        cloneFromGitBtn.setTypeface(appFontRegular);
-        createProjectIcon.setTypeface(solidFont);
-        importProjectIcon.setTypeface(solidFont);
-        cloneFromGitIcon.setTypeface(brandsRegularFont);
+        if (appName != null) appName.setTypeface(appFontBold);
+        if (haveAProject != null) haveAProject.setTypeface(appFontBold);
+        if (navBarAppName != null) navBarAppName.setTypeface(appFontBold);
+        if (navBarSectionOne != null) navBarSectionOne.setTypeface(appFontBold);
+        if (navBarSectionTwo != null) navBarSectionTwo.setTypeface(appFontBold);
+        if (navBarSectionThree != null) navBarSectionThree.setTypeface(appFontBold);
+        if (navBarSectionFour != null) navBarSectionFour.setTypeface(appFontBold);
+        if (sideBarBtn != null) sideBarBtn.setTypeface(solidFont);
+        if (createFolderBtn != null) createFolderBtn.setTypeface(solidFont);
+        if (createFileBtn != null) createFileBtn.setTypeface(solidFont);
+        if (fabAdd != null) fabAdd.setTypeface(solidFont);
+        
+        if (createProjectBtn != null) createProjectBtn.setTypeface(appFontRegular);
+        if (importProjectBtn != null) importProjectBtn.setTypeface(appFontRegular);
+        if (cloneFromGitBtn != null) cloneFromGitBtn.setTypeface(appFontRegular);
         
         tasksForFiles = findViewById(R.id.tasks_for_files);
         filesShareBtnLayout = findViewById(R.id.files_share_btn_layout);
@@ -307,23 +322,25 @@ public class MainActivity extends Activity {
         filesDetailsBtn = findViewById(R.id.files_details_btn);
         
         // Set Text Fonts
-        navFileManager.setTypeface(appFontRegular);
-        navProjects.setTypeface(appFontRegular);
-        navTerminal.setTypeface(appFontRegular);
-        navConsole.setTypeface(appFontRegular);
-        navWorkspace.setTypeface(appFontRegular);
-        navLearn.setTypeface(appFontRegular);
-        navCheatsheets.setTypeface(appFontRegular);
-        navAppSettings.setTypeface(appFontRegular);
-        navEditorSettings.setTypeface(appFontRegular);
-        navTerminalSettings.setTypeface(appFontRegular);
+        if (navFileManager != null) navFileManager.setTypeface(appFontRegular);
+        if (navProjects != null) navProjects.setTypeface(appFontRegular);
+        if (navTerminal != null) navTerminal.setTypeface(appFontRegular);
+        if (navConsole != null) navConsole.setTypeface(appFontRegular);
+        if (navWorkspace != null) navWorkspace.setTypeface(appFontRegular);
+        if (navGit != null) navGit.setTypeface(appFontRegular);
+        if (navLearn != null) navLearn.setTypeface(appFontRegular);
+        if (navCheatsheets != null) navCheatsheets.setTypeface(appFontRegular);
+        if (navAppSettings != null) navAppSettings.setTypeface(appFontRegular);
+        if (navEditorSettings != null) navEditorSettings.setTypeface(appFontRegular);
+        if (navTerminalSettings != null) navTerminalSettings.setTypeface(appFontRegular);
         
         // Set Icon Fonts & Unicode
         setupIcon(iconFileManager, "\uf233", solidFont);
         setupIcon(iconProjects, "\uf1b3", solidFont);
         setupIcon(iconTerminal, "\uf120", solidFont);
         setupIcon(iconConsole, "\uf120", solidFont);
-        setupIcon(iconWorkspace, "\uf121", solidFont);
+        setupIcon(iconWorkspace, "\uf5fc", solidFont);
+        setupIcon(iconGit, "\uf1d2", brandsRegularFont);
         setupIcon(iconLearn, "\uf19d", solidFont);
         setupIcon(iconCheatsheets, "\uf46d", solidFont);
         setupIcon(iconAppSettings, "\uf013", solidFont);
@@ -347,390 +364,492 @@ public class MainActivity extends Activity {
         setupIcon(createFolderBtn, "\uf65e", solidFont);
         setupIcon(createFileBtn, "\uf067", solidFont);
         setupIcon(fabAdd, "\uf067", solidFont);
+        setupIcon(emptyIcon, "\uf07c", solidFont);
+        setupIcon(workspaceBtn, "\uf5fc", solidFont);
 
         fileListView = findViewById(R.id.file_list);
         fileList = new ArrayList<>();
         adapter = new FileListAdapter(this, fileList);
         fileListView.setAdapter(adapter);
         
-        fabAdd.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startUpLayout.setVisibility(View.VISIBLE);
-            }
-        });
+        if (fabAdd != null) {
+            fabAdd.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startUpLayout.setVisibility(View.VISIBLE);
+                }
+            });
+        }
         
-        popupDimView.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startUpLayout.setVisibility(View.GONE);
-            }
-        });
-        
-        createProjectBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startUpLayout.setVisibility(View.GONE);
-                startActivity(new Intent(MainActivity.this, TemplateGalleryActivity.class));
-            }
-        });
-        
-        sideBarBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (sideBarBtn.getText().toString().equals("\uf0c9")) {
+        if (popupDimView != null) {
+            popupDimView.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
                     startUpLayout.setVisibility(View.GONE);
-                    drawerLayout.openDrawer(Gravity.LEFT);
-                } else if (sideBarBtn.getText().toString().equals("\uf00d")) {
-                    exitSelectionMode();
-                } else {
-                    parentFolderNavigation(currentDirectory);
                 }
-            }
-        });
+            });
+        }
         
-        navItemFileManager.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                drawerLayout.closeDrawer(Gravity.LEFT);
-                startDirectoryPath = null; // Clear sandbox
-                currentDirectory = Environment.getExternalStorageDirectory();
-                loadDirectory(currentDirectory);
-            }
-        });
-        
-        navItemAppFiles.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                drawerLayout.closeDrawer(Gravity.LEFT);
-                startDirectoryPath = null; // Clear sandbox
-                File appFilesDir = getExternalFilesDir(null);
-                if (appFilesDir != null) {
-                    if (!appFilesDir.exists()) appFilesDir.mkdirs();
-                    currentDirectory = appFilesDir;
-                    loadDirectory(currentDirectory);
-                } else {
-                    Toast.makeText(MainActivity.this, "App Files not available.", Toast.LENGTH_SHORT).show();
+        if (createProjectBtn != null) {
+            createProjectBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startUpLayout.setVisibility(View.GONE);
+                    startActivity(new Intent(MainActivity.this, TemplateGalleryActivity.class));
                 }
-            }
-        });
+            });
+        }
         
-        navItemAppCache.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                drawerLayout.closeDrawer(Gravity.LEFT);
-                startDirectoryPath = null; // Clear sandbox
-                File cacheDir = getCacheDir();
-                if (cacheDir != null) {
-                    currentDirectory = cacheDir;
-                    loadDirectory(currentDirectory);
+        if (sideBarBtn != null) {
+            sideBarBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (sideBarBtn.getText().toString().equals("\uf0c9")) {
+                        startUpLayout.setVisibility(View.GONE);
+                        workspaceBtn.setVisibility(View.GONE);
+                        drawerLayout.openDrawer(Gravity.LEFT);
+                    } else if (sideBarBtn.getText().toString().equals("\uf00d")) {
+                        exitSelectionMode();
+                        workspaceBtn.setVisibility(View.GONE);
+                    } else {
+                        parentFolderNavigation(currentDirectory);
+                    }
                 }
-            }
-        });
+            });
+        }
         
-        navItemSAF.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                drawerLayout.closeDrawer(Gravity.LEFT);
-                
-                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
-                    Toast.makeText(MainActivity.this, "Storage picker requires Android 5.0 or later.", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                Intent intent = new Intent(
-                        Intent.ACTION_OPEN_DOCUMENT_TREE
-                );
-
-                startActivityForResult(intent, REQUEST_SAF_DIRECTORY);
-            }
-        });
-        
-        navItemWorkspace.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                drawerLayout.closeDrawer(Gravity.LEFT);
-                android.content.Intent intent = new android.content.Intent(MainActivity.this, EditorActivity.class);
-                startActivity(intent);
-            }
-        });
-        
-        navItemProjects.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                drawerLayout.closeDrawer(Gravity.LEFT);
-                startActivity(new Intent(MainActivity.this, ProjectListActivity.class));
-            }
-        });
-        
-        navItemConsole.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                drawerLayout.closeDrawer(Gravity.LEFT);
-                startActivity(new android.content.Intent(MainActivity.this, ConsoleActivity.class));
-            }
-        });
-        
-        navTerminal.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                drawerLayout.closeDrawer(Gravity.LEFT);
-                startActivity(new android.content.Intent(MainActivity.this, TerminalActivity.class));
-            }
-        });
-
-        createFolderBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (drawerLayout.isDrawerOpen(Gravity.LEFT)) {
+        if (workspaceBtn != null) {
+            workspaceBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
                     drawerLayout.closeDrawer(Gravity.LEFT);
-                    return;
+                    android.content.Intent intent = new android.content.Intent(MainActivity.this, EditorActivity.class);
+                    startActivity(intent);
                 }
-                
-                if (currentDirectory == null) {
-                    Toast.makeText(MainActivity.this, "Load a folder first!", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                showCreateFolderDialog();
-            }
-        });
+            });
+        }
         
-        createFileBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (drawerLayout.isDrawerOpen(Gravity.LEFT)) {
+        if (navItemFileManager != null) {
+            navItemFileManager.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
                     drawerLayout.closeDrawer(Gravity.LEFT);
-                    return;
+                    startDirectoryPath = null; // Clear sandbox
+                    currentDirectory = Environment.getExternalStorageDirectory();
+                    loadDirectory(currentDirectory);
                 }
-                
-                if (currentDirectory == null) {
-                    Toast.makeText(MainActivity.this, "Load a folder first!", Toast.LENGTH_SHORT).show();
-                    return;
+            });
+        }
+        
+        if (navItemAppFiles != null) {
+            navItemAppFiles.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    drawerLayout.closeDrawer(Gravity.LEFT);
+                    startDirectoryPath = null; // Clear sandbox
+                    File appFilesDir = getExternalFilesDir(null);
+                    if (appFilesDir != null) {
+                        if (!appFilesDir.exists()) appFilesDir.mkdirs();
+                        currentDirectory = appFilesDir;
+                        loadDirectory(currentDirectory);
+                    } else {
+                        AppToast.showSuccess(MainActivity.this, "App Files not available.");
+                    }
                 }
-                showCreateFileDialog();
-            }
-        });
+            });
+        }
+        
+        if (navItemAppCache != null) {
+            navItemAppCache.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    drawerLayout.closeDrawer(Gravity.LEFT);
+                    startDirectoryPath = null; // Clear sandbox
+                    File cacheDir = getCacheDir();
+                    if (cacheDir != null) {
+                        currentDirectory = cacheDir;
+                        loadDirectory(currentDirectory);
+                    }
+                }
+            });
+        }
+        
+        if (navItemSAF != null) {
+            navItemSAF.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    drawerLayout.closeDrawer(Gravity.LEFT);
+                    
+                    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
+                        AppToast.showSuccess(MainActivity.this, "Storage picker requires Android 5.0 or later.");
+                        return;
+                    }
 
-        filesShareBtnLayout.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ArrayList<Uri> uris = new ArrayList<>();
-                for (FileItem item : fileList) {
-                    if (item.isSelected && !item.isDir) {
-                        // Create a content:// URI using FileProvider
+                    Intent intent = new Intent(
+                            Intent.ACTION_OPEN_DOCUMENT_TREE
+                    );
+
+                    startActivityForResult(intent, REQUEST_SAF_DIRECTORY);
+                }
+            });
+        }
+        
+        if (navItemWorkspace != null) {
+            navItemWorkspace.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    drawerLayout.closeDrawer(Gravity.LEFT);
+                    android.content.Intent intent = new android.content.Intent(MainActivity.this, EditorActivity.class);
+                    startActivity(intent);
+                }
+            });
+        }
+        
+        if (navItemGit != null) {
+            navItemGit.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    drawerLayout.closeDrawer(Gravity.LEFT);
+                    if (currentDirectory != null) {
+                        android.content.Intent intent = new android.content.Intent(MainActivity.this, GitActivity.class);
+                        intent.putExtra("project_path", currentDirectory.getAbsolutePath());
+                        startActivity(intent);
+                    } else {
+                        AppToast.showSuccess(MainActivity.this, "Open a folder first!");
+                    }
+                }
+            });
+        }
+        
+        if (navItemProjects != null) {
+            navItemProjects.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    drawerLayout.closeDrawer(Gravity.LEFT);
+                    startActivity(new Intent(MainActivity.this, ProjectListActivity.class));
+                }
+            });
+        }
+        
+        if (navItemConsole != null) {
+            navItemConsole.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    drawerLayout.closeDrawer(Gravity.LEFT);
+                    startActivity(new android.content.Intent(MainActivity.this, ConsoleActivity.class));
+                }
+            });
+        }
+        
+        if (navItemTerminal != null) {
+            navItemTerminal.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    drawerLayout.closeDrawer(Gravity.LEFT);
+                    startActivity(new android.content.Intent(MainActivity.this, TerminalActivity.class));
+                }
+            });
+        }
+        
+        if (navItemAppSettings != null) {
+            navItemAppSettings.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    drawerLayout.closeDrawer(Gravity.LEFT);
+                    android.content.Intent intent = new android.content.Intent(MainActivity.this, AppSettingsActivity.class);
+                    startActivity(intent);
+                }
+            });
+        }
+        
+        if (navItemEditorSettings != null) {
+            navItemEditorSettings.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    drawerLayout.closeDrawer(Gravity.LEFT);
+                    android.content.Intent intent = new android.content.Intent(MainActivity.this, EditorSettingsActivity.class);
+                    startActivity(intent);
+                }
+            });
+        }
+        
+        if (navItemAppSettings != null) {
+            navItemAppSettings.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    drawerLayout.closeDrawer(Gravity.LEFT);
+                    android.content.Intent intent = new android.content.Intent(MainActivity.this, TerminalSettingsActivity.class);
+                    startActivity(intent);
+                }
+            });
+        }
+
+        if (createFolderBtn != null) {
+            createFolderBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (drawerLayout.isDrawerOpen(Gravity.LEFT)) {
+                        drawerLayout.closeDrawer(Gravity.LEFT);
+                        return;
+                    }
+                    
+                    if (currentDirectory == null) {
+                        AppToast.showSuccess(MainActivity.this, "Load a folder first!");
+                        return;
+                    }
+                    startUpLayout.setVisibility(View.GONE);
+                    showCreateFolderDialog();
+                }
+            });
+        }
+        
+        if (createFileBtn != null) {
+            createFileBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (drawerLayout.isDrawerOpen(Gravity.LEFT)) {
+                        drawerLayout.closeDrawer(Gravity.LEFT);
+                        return;
+                    }
+                    
+                    if (currentDirectory == null) {
+                        AppToast.showSuccess(MainActivity.this, "Load a folder first!");
+                        return;
+                    }
+                    startUpLayout.setVisibility(View.GONE);
+                    showCreateFileDialog();
+                }
+            });
+        }
+
+        if (filesShareBtnLayout != null) {
+            filesShareBtnLayout.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ArrayList<Uri> uris = new ArrayList<>();
+                    for (FileItem item : fileList) {
+                        if (item.isSelected && !item.isDir) {
+                            Uri uri = android.support.v4.content.FileProvider.getUriForFile(
+                                    MainActivity.this,
+                                    getPackageName() + ".fileprovider",
+                                    item.file
+                            );
+                            uris.add(uri);
+                        }
+                    }
+
+                    if (uris.isEmpty()) return;
+
+                    Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+                    intent.setType("*/*");
+                    intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(Intent.createChooser(intent, "Share files via"));
+                }
+            });
+        }
+    
+        if (filesDeleteBtnLayout != null) {
+            filesDeleteBtnLayout.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int selectedCount = 0;
+                    for (FileItem item : fileList) {
+                        if (item.isSelected) selectedCount++;
+                    }
+
+                    if (selectedCount == 0) return;
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setTitle("Delete " + selectedCount + (selectedCount == 1 ? " item?" : " items?"));
+                    builder.setMessage("Are you sure you want to delete the selected items? This action cannot be undone.");
+            
+                    builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            int deletedSuccessfully = 0;
+                            int failedToDelete = 0;
+
+                            for (FileItem item : fileList) {
+                                if (item.isSelected) {
+                                    if (deleteRecursive(item.file)) {
+                                        deletedSuccessfully++;
+                                    } else {
+                                        failedToDelete++;
+                                    }
+                                }
+                            }
+
+                            if (failedToDelete == 0) {
+                                AppToast.showSuccess(MainActivity.this, "Successfully deleted " + deletedSuccessfully + " item(s).");
+                            } else {
+                                AppToast.showSuccess(MainActivity.this, "Deleted " + deletedSuccessfully + ", but failed to delete " + failedToDelete + " item(s).");
+                            }
+
+                            exitSelectionMode();
+                            loadDirectory(currentDirectory);
+                        }
+                    });
+            
+                    builder.setNegativeButton("Cancel", null);
+                    builder.show();
+                }
+            });
+        }
+        
+        if (filesMoreBtnLayout != null) {
+            filesMoreBtnLayout.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (moreFileTasks != null) moreFileTasks.setVisibility(View.VISIBLE);
+                }
+            });
+        }
+        
+        if (moreFileTasks != null) {
+            moreFileTasks.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    moreFileTasks.setVisibility(View.GONE);
+                }
+            });
+        }
+        
+        if (filesAddAsProjectBtn != null) {
+            filesAddAsProjectBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    FileItem selectedItem = null;
+                    for (FileItem item : fileList) {
+                        if (item.isSelected) {
+                            selectedItem = item;
+                            break;
+                        }
+                    }
+            
+                    if (selectedItem == null) return;
+
+                    if (!selectedItem.isDir) {
+                        AppToast.showSuccess(MainActivity.this, "Please select a folder, not a file.");
+                        return;
+                    }
+                    
+                    showAddAsProjectDialog(selectedItem);
+                }
+            });
+        }
+        
+        if (filesRenameBtn != null) {
+            filesRenameBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    FileItem selectedItem = null;
+                    for (FileItem item : fileList) {
+                        if (item.isSelected) {
+                            selectedItem = item;
+                            break;
+                        }
+                    }
+            
+                    if (selectedItem != null) {
+                        showRenameDialog(selectedItem);
+                    }
+                }
+            });
+        }
+        
+        if (filesOpenWithBtn != null) {
+            filesOpenWithBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    FileItem selectedItem = null;
+            
+                    for (FileItem item : fileList) {
+                        if (item.isSelected) {
+                            selectedItem = item;
+                            break;
+                        }
+                    }
+            
+                    if (selectedItem == null || selectedItem.isDir) {
+                        AppToast.showSuccess(MainActivity.this, "Please select a file.");
+                        return;
+                    }
+
+                    String ext = selectedItem.ext.toLowerCase();
+                    String mimeType = java.net.URLConnection.guessContentTypeFromName(selectedItem.name);
+
+                    if (mimeType == null) {
+                        mimeType = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
+                    }
+
+                    if (mimeType == null) {
+                        mimeType = "*/*"; 
+                    }
+
+                    try {
                         Uri uri = android.support.v4.content.FileProvider.getUriForFile(
                                 MainActivity.this,
                                 getPackageName() + ".fileprovider",
-                                item.file
+                                selectedItem.file
                         );
-                        uris.add(uri);
-                    }
-                }
 
-                if (uris.isEmpty()) return;
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setDataAndType(uri, mimeType);
+                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-                Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-                intent.setType("*/*");
-                intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                startActivity(Intent.createChooser(intent, "Share files via"));
-            }
-        });
-    
-        filesDeleteBtnLayout.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // 1. Count selected items
-                int selectedCount = 0;
-                for (FileItem item : fileList) {
-                    if (item.isSelected) selectedCount++;
-                }
-
-                if (selectedCount == 0) return;
-
-                // 2. Show Confirmation Dialog
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Delete " + selectedCount + (selectedCount == 1 ? " item?" : " items?"));
-                builder.setMessage("Are you sure you want to delete the selected items? This action cannot be undone.");
-        
-                builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        int deletedSuccessfully = 0;
-                        int failedToDelete = 0;
-
-                        // 3. Loop through the list and delete selected items
-                        for (FileItem item : fileList) {
-                            if (item.isSelected) {
-                                if (deleteRecursive(item.file)) {
-                                    deletedSuccessfully++;
-                                } else {
-                                    failedToDelete++;
-                                }
-                            }
-                        }
-
-                        // 4. Show the result
-                        if (failedToDelete == 0) {
-                            Toast.makeText(MainActivity.this, "Successfully deleted " + deletedSuccessfully + " item(s).", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(MainActivity.this, "Deleted " + deletedSuccessfully + ", but failed to delete " + failedToDelete + " item(s).", Toast.LENGTH_LONG).show();
-                        }
-
-                        // 5. Exit selection mode and refresh the directory
+                        startActivity(Intent.createChooser(intent, "Open with"));
                         exitSelectionMode();
-                        loadDirectory(currentDirectory);
-                    }
-                });
-        
-                builder.setNegativeButton("Cancel", null);
-                builder.show();
-            }
-        });
-        
-        filesMoreBtnLayout.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                moreFileTasks.setVisibility(View.VISIBLE);
-            }
-        });
-        
-        moreFileTasks.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                moreFileTasks.setVisibility(View.GONE);
-            }
-        });
-        
-        filesAddAsProjectBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FileItem selectedItem = null;
-                for (FileItem item : fileList) {
-                    if (item.isSelected) {
-                        selectedItem = item;
-                        break;
+
+                    } catch (android.content.ActivityNotFoundException e) {
+                        AppToast.showSuccess(MainActivity.this, "No app found to open this file type (" + ext + ")");
+                    } catch (Exception e) {
+                        AppToast.showSuccess(MainActivity.this, "Error opening file: " + e.getMessage());
                     }
                 }
+            });
+        }
         
-                if (selectedItem == null) return;
-
-                // Only allow folders to be added as projects
-                if (!selectedItem.isDir) {
-                    Toast.makeText(MainActivity.this, "Please select a folder, not a file.", Toast.LENGTH_SHORT).show();
-                    return;
+        if (filesCompressBtn != null) {
+            filesCompressBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    moreFileTasks.setVisibility(View.GONE);
+                    compressSelectedFiles();
                 }
-                
-                showAddAsProjectDialog(selectedItem);
-            }
-        });
+            });
+        }
         
-        filesRenameBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FileItem selectedItem = null;
-                for (FileItem item : fileList) {
-                    if (item.isSelected) {
-                        selectedItem = item;
-                        break;
+        if (filesUncompressBtn != null) {
+            filesUncompressBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    moreFileTasks.setVisibility(View.GONE);
+                    uncompressSelectedFile();
+                }
+            });
+        }
+        
+        if (filesDetailsBtn != null) {
+            filesDetailsBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    moreFileTasks.setVisibility(View.GONE);
+            
+                    FileItem selectedItem = null;
+                    for (FileItem item : fileList) {
+                        if (item.isSelected) {
+                            selectedItem = item;
+                            break;
+                        }
+                    }
+                    
+                    if (selectedItem != null) {
+                        showDetailsDialog(selectedItem);
                     }
                 }
-        
-                if (selectedItem != null) {
-                    showRenameDialog(selectedItem);
-                }
-            }
-        });
-        
-        filesOpenWithBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FileItem selectedItem = null;
-        
-                for (FileItem item : fileList) {
-                    if (item.isSelected) {
-                        selectedItem = item;
-                        break;
-                    }
-                }
-        
-                if (selectedItem == null || selectedItem.isDir) {
-                    Toast.makeText(MainActivity.this, "Please select a file.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // Get the MIME type (e.g., text/plain, image/png, application/pdf)
-                String ext = selectedItem.ext.toLowerCase();
-                // String mimeType = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
-                String mimeType = java.net.URLConnection.guessContentTypeFromName(selectedItem.name);
-
-                if (mimeType == null) {
-                    mimeType = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
-                }
-
-                // If it STILL doesn't know, just use */*
-                if (mimeType == null) {
-                    mimeType = "*/*"; 
-                }
-
-                try {
-                    // Get the secure content:// URI
-                    Uri uri = android.support.v4.content.FileProvider.getUriForFile(
-                            MainActivity.this,
-                            getPackageName() + ".fileprovider",
-                            selectedItem.file
-                    );
-
-                    // Create the Intent to view the file
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setDataAndType(uri, mimeType);
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-                    startActivity(Intent.createChooser(intent, "Open with"));
-                    exitSelectionMode();
-
-                } catch (android.content.ActivityNotFoundException e) {
-                    Toast.makeText(MainActivity.this, "No app found to open this file type (" + ext + ")", Toast.LENGTH_LONG).show();
-                } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Error opening file: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                }
-            }
-        });
-        
-        filesCompressBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                moreFileTasks.setVisibility(View.GONE);
-                compressSelectedFiles();
-            }
-        });
-        
-        filesUncompressBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                moreFileTasks.setVisibility(View.GONE);
-                uncompressSelectedFile();
-            }
-        });
-        
-        filesDetailsBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                moreFileTasks.setVisibility(View.GONE);
-        
-                FileItem selectedItem = null;
-                for (FileItem item : fileList) {
-                    if (item.isSelected) {
-                        selectedItem = item;
-                        break;
-                    }
-                }
-                
-                if (selectedItem != null) {
-                    showDetailsDialog(selectedItem);
-                }
-            }
-        });
+            });
+        }
 
         fileListView.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {
             @Override
@@ -767,7 +886,9 @@ public class MainActivity extends Activity {
                         ext.equals("gitignore") ||
                         ext.equals("gradle") ||
                         ext.equals("pro") ||
-                        ext.equals("svg");
+                        ext.equals("svg") ||
+                        ext.equals("sh") ||
+                        ext.equals("");
                     
                     if (textFiles) {
                         android.content.SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
@@ -791,7 +912,7 @@ public class MainActivity extends Activity {
                         intent.putExtra("file_path", filePath);
                         startActivity(intent);
                     } else {
-                        Toast.makeText(MainActivity.this, "Feature not available yet.", Toast.LENGTH_LONG).show();
+                        AppToast.showSuccess(MainActivity.this, "Feature not available yet.");
                     }
                 }
             }
@@ -864,6 +985,7 @@ public class MainActivity extends Activity {
         if (parentDir == null) {
             currentDirectory = null;
             showWelcomeScreen();
+            workspaceBtn.setVisibility(View.GONE);
             return;
         }
 
@@ -876,29 +998,101 @@ public class MainActivity extends Activity {
             } else {
                 currentDirectory = null;
                 showWelcomeScreen();
+                workspaceBtn.setVisibility(View.GONE);
             }
         } else if (path.equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
             currentDirectory = null;
             showWelcomeScreen();
+            workspaceBtn.setVisibility(View.GONE);
         } else if (parent.equals("/storage/emulated/0/Android/data")) {
             loadDirectory(Environment.getExternalStorageDirectory());
-            Toast.makeText(MainActivity.this, "Can't read data. Redirected to root folder.", Toast.LENGTH_LONG).show();
+            AppToast.showSuccess(MainActivity.this, "Can't read data. Redirected to root folder.");
         } else {
             loadDirectory(dir.getParentFile());
         }
     }
     
+    private void showGitDialog() {
+        if (currentDirectory == null) {
+            AppToast.showSuccess(MainActivity.this, "Open a project folder first!");
+            return;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Git Actions for " + currentDirectory.getName());
+    
+        // Simple test menu
+        builder.setItems(new String[]{"Init Repo", "Commit Changes", "Push to GitHub"}, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (which == 0) {
+                    String result = GitManager.initRepo(currentDirectory);
+                    AppToast.showSuccess(MainActivity.this, result);
+                } else if (which == 1) {
+                    String result = GitManager.commitAll(currentDirectory, "Auto-commit from DebugMate");
+                    AppToast.showSuccess(MainActivity.this, result);
+                } else if (which == 2) {
+                    showPushDialog();
+                }
+            }
+        });
+        builder.show();
+    }
+    
+    private void showPushDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Push to GitHub");
+
+        // Create a vertical layout for inputs
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(40, 20, 40, 20);
+
+        final EditText inputUrl = new EditText(this);
+        inputUrl.setHint("Remote URL (https://github.com/user/repo.git)");
+        layout.addView(inputUrl);
+
+        final EditText inputUser = new EditText(this);
+        inputUser.setHint("GitHub Username");
+        layout.addView(inputUser);
+
+        final EditText inputToken = new EditText(this);
+        inputToken.setHint("Personal Access Token");
+        layout.addView(inputToken);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Push", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String url = inputUrl.getText().toString().trim();
+                String user = inputUser.getText().toString().trim();
+                String token = inputToken.getText().toString().trim();
+                
+                AppToast.showSuccess(MainActivity.this, "Pushing... (Check logcat if it hangs)");
+                
+                String result = GitManager.pushToRemote(currentDirectory, url, user, token);
+                AppToast.showSuccess(MainActivity.this, result);
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+    
     private void setupIcon(TextView textView, String unicode, Typeface font) {
-        textView.setTypeface(font);
-        textView.setText(unicode);
+        if (textView != null) {
+            textView.setTypeface(font);
+            textView.setText(unicode);
+        }
     }
 
     private void showWelcomeScreen() {
-        welcomeMessage.setVisibility(View.VISIBLE);
-        fileListView.setVisibility(View.GONE);
+        if (welcomeMessage != null) welcomeMessage.setVisibility(View.VISIBLE);
+        if (fileListView != null) fileListView.setVisibility(View.GONE);
+        if (emptyFolderLayout != null) emptyFolderLayout.setVisibility(View.GONE);
         if (!isPickerMode) {
-            appName.setText("DebugMate");
-            sideBarBtn.setText("\uf0c9");
+            if (appName != null) appName.setText("DebugMate");
+            if (sideBarBtn != null) sideBarBtn.setText("\uf0c9");
         }
     }
     
@@ -906,7 +1100,6 @@ public class MainActivity extends Activity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Select Project Type");
     
-        // The available project types
         final String[] types = {"web", "python", "java", "android", "custom"};
     
         builder.setItems(types, new DialogInterface.OnClickListener() {
@@ -914,7 +1107,6 @@ public class MainActivity extends Activity {
             public void onClick(DialogInterface dialog, int which) {
                 String selectedType = types[which];
             
-                // Create the ProjectItem using the folder's name and path
                 ProjectItem newProject = new ProjectItem(
                         item.name, 
                         selectedType, 
@@ -922,12 +1114,10 @@ public class MainActivity extends Activity {
                         "Custom"
                 );
             
-                // Save it to the JSON file
                 ProjectManager.saveProject(MainActivity.this, newProject);
             
-                Toast.makeText(MainActivity.this, "Added '" + item.name + "' to Projects!", Toast.LENGTH_SHORT).show();
+                AppToast.showSuccess(MainActivity.this, "Added '" + item.name + "' to Projects!");
             
-                // Exit selection mode and refresh
                 exitSelectionMode();
             }
         });
@@ -947,7 +1137,7 @@ public class MainActivity extends Activity {
                 if (item.isDir) {
                     hasFolder = true;
                 }
-                selectedExt = item.ext.toLowerCase(); // Keep updating, will hold the last selected item's ext
+                selectedExt = item.ext.toLowerCase(); 
             }
         }
 
@@ -998,7 +1188,6 @@ public class MainActivity extends Activity {
                     filesOpenWithBtn.setFocusable(true);
                     filesOpenWithBtn.setTextColor(Color.parseColor("#FFFFFF"));
                 
-                    // if (selectedExt.equals("zip") || selectedExt.equals("rar") || selectedExt.equals("7z") || selectedExt.equals("tar") || selectedExt.equals("gz")) {
                     if (selectedExt.equals("zip")) {
                         filesUncompressBtn.setClickable(true);
                         filesUncompressBtn.setFocusable(true);
@@ -1024,26 +1213,24 @@ public class MainActivity extends Activity {
     private void exitSelectionMode() {
         isSelectionMode = false;
         adapter.setSelectionMode(false);
-        tasksForFiles.setVisibility(View.GONE);
-        moreFileTasks.setVisibility(View.GONE);
-        fabAdd.setVisibility(View.VISIBLE);
+        if (tasksForFiles != null) tasksForFiles.setVisibility(View.GONE);
+        if (moreFileTasks != null) moreFileTasks.setVisibility(View.GONE);
+        if (fabAdd != null) fabAdd.setVisibility(View.VISIBLE);
     
-        // Clear all selections
         for (FileItem item : fileList) {
             item.isSelected = false;
         }
         adapter.notifyDataSetChanged();
     
-        // Restore the App Name and Sidebar button
         if (currentDirectory == null) {
-            appName.setText("DebugMate");
-            sideBarBtn.setText("\uf0c9");
+            if (appName != null) appName.setText("DebugMate");
+            if (sideBarBtn != null) sideBarBtn.setText("\uf0c9");
         } else if (currentDirectory.getAbsolutePath().equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
-            appName.setText("DebugMate");
-            sideBarBtn.setText("\uf0c9");
+            if (appName != null) appName.setText("DebugMate");
+            if (sideBarBtn != null) sideBarBtn.setText("\uf0c9");
         } else {
-            appName.setText(currentDirectory.getName());
-            sideBarBtn.setText("\uf060");
+            if (appName != null) appName.setText(currentDirectory.getName());
+            if (sideBarBtn != null) sideBarBtn.setText("\uf060");
         }
     }
 
@@ -1065,44 +1252,73 @@ public class MainActivity extends Activity {
         File[] files = dir.listFiles();
 
         if (files != null) {
-            Arrays.sort(files, new Comparator<File>() {
-                @Override
-                public int compare(File f1, File f2) {
-                    if (f1.isDirectory() && !f2.isDirectory()) return -1;
-                    if (!f1.isDirectory() && f2.isDirectory()) return 1;
-                    return f1.getName().compareToIgnoreCase(f2.getName());
+            // --- Check if the folder is empty ---
+            if (files.length == 0) {
+                if (welcomeMessage != null) welcomeMessage.setVisibility(View.GONE);
+                if (fileListView != null) fileListView.setVisibility(View.GONE);
+                
+                if (emptyFolderLayout != null) {
+                    emptyFolderLayout.setVisibility(View.VISIBLE);
+                    
+                    // Trigger the animation
+                    android.view.animation.AlphaAnimation fadeIn = new android.view.animation.AlphaAnimation(0f, 1f);
+                    fadeIn.setDuration(600);
+                    emptyFolderLayout.startAnimation(fadeIn);
                 }
-            });
+                
+            } else {
+                // --- Folder has files ---
+                if (emptyFolderLayout != null) emptyFolderLayout.setVisibility(View.GONE);
+                
+                Arrays.sort(files, new Comparator<File>() {
+                    @Override
+                    public int compare(File f1, File f2) {
+                        if (f1.isDirectory() && !f2.isDirectory()) return -1;
+                        if (!f1.isDirectory() && f2.isDirectory()) return 1;
+                        return f1.getName().compareToIgnoreCase(f2.getName());
+                    }
+                });
 
-            fileList.clear();
-            for (File file : files) fileList.add(new FileItem(file));
-            adapter.notifyDataSetChanged();
-            
-            welcomeMessage.setVisibility(View.GONE);
-            fileListView.setVisibility(View.VISIBLE);
+                fileList.clear();
+                SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                boolean showHidden = prefs.getBoolean("show_hidden_files", false);
+
+                for (File file : files) {
+                    // If it's a hidden file and the setting is OFF, skip it
+                    if (!showHidden && file.getName().startsWith(".")) {
+                        continue;
+                    }
+                    fileList.add(new FileItem(file));
+                }
+                adapter.notifyDataSetChanged();
+                
+                if (welcomeMessage != null) welcomeMessage.setVisibility(View.GONE);
+                if (fileListView != null) fileListView.setVisibility(View.VISIBLE);
+                workspaceBtn.setVisibility(View.VISIBLE);
+            }
             
             if (isPickerMode) {
-                // Keep the picker title, but update the sidebar icon
+                workspaceBtn.setVisibility(View.GONE);
                 if (currentDirectory.getAbsolutePath().equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
-                    sideBarBtn.setText("\uf0c9");
+                    if (sideBarBtn != null) sideBarBtn.setText("\uf0c9");
                 } else {
-                    sideBarBtn.setText("\uf060");
+                    if (sideBarBtn != null) sideBarBtn.setText("\uf060");
                 }
-                // Show current folder name in the picker title
-                appName.setText("Select: " + dir.getName());
+                if (appName != null) appName.setText("Select: " + dir.getName());
     
             } else {
-                // Normal Mode
                 if (currentDirectory.getAbsolutePath().equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
-                    sideBarBtn.setText("\uf0c9");
-                    appName.setText("DebugMate");
+                    if (sideBarBtn != null) sideBarBtn.setText("\uf0c9");
+                    if (appName != null) appName.setText("DebugMate");
+                    workspaceBtn.setVisibility(View.GONE);
                 } else {
-                    appName.setText(dir.getName());
-                    sideBarBtn.setText("\uf060");
+                    if (appName != null) appName.setText(dir.getName());
+                    if (sideBarBtn != null) sideBarBtn.setText("\uf060");
+                    workspaceBtn.setVisibility(View.VISIBLE);
                 }
             }
         } else {
-             Toast.makeText(this, "Cannot read directory: " + dir.getName(), Toast.LENGTH_LONG).show();
+             AppToast.showInfo(MainActivity.this, "Cannot read directory: " + dir.getName());
         }
     }
     
@@ -1119,15 +1335,15 @@ public class MainActivity extends Activity {
             public void onClick(DialogInterface dialog, int which) {
                 String folderName = input.getText().toString().trim();
                 if (folderName.isEmpty()) {
-                    Toast.makeText(MainActivity.this, "Folder name cannot be empty.", Toast.LENGTH_SHORT).show();
+                    AppToast.showSuccess(MainActivity.this, "Folder name cannot be empty.");
                     return;
                 }
                 File newFolder = new File(currentDirectory, folderName);
                 if (newFolder.mkdir()) {
-                    Toast.makeText(MainActivity.this, "Created: " + folderName, Toast.LENGTH_SHORT).show();
+                    AppToast.showSuccess(MainActivity.this, "Created: " + folderName);
                     loadDirectory(currentDirectory); 
                 } else {
-                    Toast.makeText(MainActivity.this, "Folder already exists!", Toast.LENGTH_SHORT).show();
+                    AppToast.showSuccess(MainActivity.this, "Folder already exists!");
                 }
             }
         });
@@ -1147,19 +1363,19 @@ public class MainActivity extends Activity {
             public void onClick(DialogInterface dialog, int which) {
                 String fileName = input.getText().toString().trim();
                 if (fileName.isEmpty()) {
-                    Toast.makeText(MainActivity.this, "File name cannot be empty.", Toast.LENGTH_SHORT).show();
+                    AppToast.showSuccess(MainActivity.this, "File name cannot be empty.");
                     return;
                 }
                 File newFile = new File(currentDirectory, fileName);
                 try {
                     if (newFile.createNewFile()) {
-                        Toast.makeText(MainActivity.this, "Created: " + fileName, Toast.LENGTH_SHORT).show();
+                        AppToast.showSuccess(MainActivity.this, "Created: " + fileName);
                         loadDirectory(currentDirectory); 
                     } else {
-                        Toast.makeText(MainActivity.this, "File already exists!", Toast.LENGTH_SHORT).show();
+                        AppToast.showSuccess(MainActivity.this, "File already exists!");
                     }
                 } catch (IOException e) {
-                    Toast.makeText(MainActivity.this, "Error creating file: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    AppToast.showSuccess(MainActivity.this, "Error creating file: " + e.getMessage());
                 }
             }
         });
@@ -1190,15 +1406,15 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 String newName = input.getText().toString().trim();
-                if (newName.isEmpty()) { Toast.makeText(MainActivity.this, "Name cannot be empty.", Toast.LENGTH_SHORT).show(); return; }
+                if (newName.isEmpty()) { AppToast.showSuccess(MainActivity.this, "Name cannot be empty."); return; }
                 if (newName.equals(item.name)) return;
                 File newFile = new File(currentDirectory, newName);
                 if (item.file.renameTo(newFile)) {
-                    Toast.makeText(MainActivity.this, "Renamed successfully!", Toast.LENGTH_SHORT).show();
+                    AppToast.showSuccess(MainActivity.this, "Renamed successfully!");
                     exitSelectionMode();
                     loadDirectory(currentDirectory); 
                 } else {
-                    Toast.makeText(MainActivity.this, "Rename failed. File might already exist.", Toast.LENGTH_LONG).show();
+                    AppToast.showSuccess(MainActivity.this, "Rename failed. File might already exist.");
                 }
             }
         });
@@ -1214,10 +1430,10 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (deleteRecursive(item.file)) {
-                    Toast.makeText(MainActivity.this, "Deleted successfully!", Toast.LENGTH_SHORT).show();
+                    AppToast.showSuccess(MainActivity.this, "Deleted successfully!");
                     loadDirectory(currentDirectory);
                 } else {
-                    Toast.makeText(MainActivity.this, "Failed to delete.", Toast.LENGTH_LONG).show();
+                    AppToast.showSuccess(MainActivity.this, "Failed to delete.");
                 }
             }
         });
@@ -1233,7 +1449,6 @@ public class MainActivity extends Activity {
 
         if (selectedFiles.isEmpty()) return;
     
-        // Create a unique zip name (e.g., archive.zip, archive(1).zip)
         File zipFile = new File(currentDirectory, "archive.zip");
         int count = 1;
         while (zipFile.exists()) {
@@ -1242,9 +1457,8 @@ public class MainActivity extends Activity {
         }
         final File finalZipFile = zipFile;
 
-        Toast.makeText(this, "Compressing... Please wait.", Toast.LENGTH_LONG).show();
+        AppToast.showSuccess(MainActivity.this, "Compressing... Please wait.");
 
-        // Run in background thread to prevent UI freeze
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -1262,7 +1476,7 @@ public class MainActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(MainActivity.this, "Compressed successfully to " + finalZipFile.getName(), Toast.LENGTH_SHORT).show();
+                            AppToast.showSuccess(MainActivity.this, "Compressed successfully to " + finalZipFile.getName());
                             exitSelectionMode();
                             loadDirectory(currentDirectory);
                         }
@@ -1272,7 +1486,7 @@ public class MainActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(MainActivity.this, "Compression failed!", Toast.LENGTH_LONG).show();
+                            AppToast.showSuccess(MainActivity.this, "Compression failed!");
                         }
                     });
                 }
@@ -1327,13 +1541,12 @@ public class MainActivity extends Activity {
         final File zipFile = selectedItem.file;
     
         if (!zipFile.getName().toLowerCase().endsWith(".zip")) {
-            Toast.makeText(this, "Only .zip files are supported for extraction.", Toast.LENGTH_LONG).show();
+            AppToast.showSuccess(MainActivity.this, "Only .zip files are supported for extraction.");
             return;
         }
     
-        Toast.makeText(this, "Uncompressing... Please wait.", Toast.LENGTH_LONG).show();
+        AppToast.showSuccess(MainActivity.this, "Uncompressing... Please wait.");
 
-        // Run in background thread
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -1343,7 +1556,7 @@ public class MainActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(MainActivity.this, "Uncompressed successfully!", Toast.LENGTH_SHORT).show();
+                            AppToast.showSuccess(MainActivity.this, "Uncompressed successfully!");
                             exitSelectionMode();
                             loadDirectory(currentDirectory);
                         }
@@ -1353,7 +1566,7 @@ public class MainActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(MainActivity.this, "Failed to uncompress: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            AppToast.showSuccess(MainActivity.this, "Failed to uncompress: " + e.getMessage());
                         }
                     });
                 }
@@ -1396,18 +1609,14 @@ public class MainActivity extends Activity {
     }
     
     private void showDetailsDialog(FileItem item) {
-        // 1. Format the Last Modified Date
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault());
         String dateString = sdf.format(new Date(item.file.lastModified()));
 
-        // 2. Calculate Size (If it's a folder, we need to calculate the total size recursively)
         long sizeInBytes = item.isDir ? getFolderSize(item.file) : item.file.length();
         String sizeString = formatSize(sizeInBytes);
 
-        // 3. Format Type
         String typeString = item.isDir ? "Folder" : item.ext.toUpperCase() + " File";
 
-        // 4. Build the message
         String details = 
                 "Name:\n" + item.name + "\n\n" +
                 "Type:\n" + typeString + "\n\n" +
@@ -1415,7 +1624,6 @@ public class MainActivity extends Activity {
                 "Last Modified:\n" + dateString + "\n\n" +
                 "Path:\n" + item.file.getAbsolutePath();
 
-        // 5. Show the Dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("File Details");
         builder.setMessage(details);
@@ -1423,7 +1631,6 @@ public class MainActivity extends Activity {
         builder.show();
     }
 
-    // Helper to calculate folder size recursively
     private long getFolderSize(File dir) {
         long size = 0;
         File[] files = dir.listFiles();
@@ -1432,7 +1639,7 @@ public class MainActivity extends Activity {
                 if (file.isFile()) {
                     size += file.length();
                 } else {
-                    size += getFolderSize(file); // Recursive call for subfolders
+                    size += getFolderSize(file); 
                 }
             }
         }
@@ -1461,11 +1668,7 @@ public class MainActivity extends Activity {
             Uri treeUri = data.getData();
     
             if (treeUri == null) {
-                Toast.makeText(
-                        this,
-                        "No directory was selected.",
-                        Toast.LENGTH_SHORT
-                ).show();
+                AppToast.showSuccess(MainActivity.this, "No directory was selected.");
                 return;
             }
     
@@ -1479,19 +1682,20 @@ public class MainActivity extends Activity {
                         takeFlags
                 );
     
-                Toast.makeText(
-                        this,
-                        "Storage access granted.",
-                        Toast.LENGTH_SHORT
-                ).show();
+                AppToast.showSuccess(MainActivity.this, "Storage access granted.");
     
             } catch (SecurityException e) {
-                    Toast.makeText(
-                        this,
-                        "Could not retain storage access.",
-                        Toast.LENGTH_LONG
-                ).show();
+                    AppToast.showSuccess(MainActivity.this, "Could not retain storage access.");
             }
+        }
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh the directory if we have one open to apply new settings
+        if (currentDirectory != null && !isSelectionMode) {
+            loadDirectory(currentDirectory);
         }
     }
 
@@ -1504,7 +1708,6 @@ public class MainActivity extends Activity {
         
         if (isPickerMode) {
             if (currentDirectory == null || currentDirectory.getAbsolutePath().equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
-                // If we are at the root, cancel the picker
                 setResult(RESULT_CANCELED);
                 finish();
             } else {
@@ -1521,11 +1724,10 @@ public class MainActivity extends Activity {
         if (currentDirectory != null) {
             parentFolderNavigation(currentDirectory);
         } else {
-            // Double tap to exit from Welcome Screen
             if (backPressedTime + 2000 > System.currentTimeMillis()) {
                 super.onBackPressed();
             } else {
-                Toast.makeText(MainActivity.this, "Press back again to exit", Toast.LENGTH_SHORT).show();
+                AppToast.showSuccess(MainActivity.this, "Press back again to exit");
             }
             backPressedTime = System.currentTimeMillis();
         }

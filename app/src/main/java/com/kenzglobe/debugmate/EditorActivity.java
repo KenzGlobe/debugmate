@@ -1,30 +1,21 @@
-
 package com.kenzglobe.debugmate;
 
-import android.app.Activity;
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.graphics.Typeface;
+import android.app.*;
+import android.content.*;
+import android.graphics.*;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Gravity;
+import android.text.TextWatcher;
+import android.text.Editable;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 import android.widget.AdapterView;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.widget.*;
 import org.json.JSONArray;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.*;
 import java.util.ArrayList;
 
 public class EditorActivity extends Activity {
@@ -33,13 +24,34 @@ public class EditorActivity extends Activity {
     private WebView codeEditorWebView;
     private android.support.v4.widget.DrawerLayout editorDrawer;
     private ListView treeList;
-    private TextView treeRootName, treeUpBtn;
+    private FrameLayout colorPickerView;
+    private com.kenzglobe.debugmate.ColorPickerView colorPickerWheel;
+    private View colorPreview;
+    
+    private EditText colorHexText,
+        gotoLineInput;
+        
+    private Button btnInsertColor,
+        reduceFontSize,
+        increaseFontSize,
+        btnGoToLine;
+    
+    private TextView treeRootName,
+        treeUpBtn,
+        settingsBtn,
+        createFolder,
+        createFile,
+        palette,
+        btnClosePalette,
+        currentFontSize;
+        
     private File treeCurrentDir;
     private EditorTreeAdapter treeAdapter;
     private ArrayList<File> treeFiles = new ArrayList<>();
     private boolean editorReady = false;
     private String pendingCode = null;
     private String pendingExtension = "text";
+    private int currentEditorFontSize;
 
     private Typeface appFont, solidFont;
 
@@ -61,6 +73,9 @@ public class EditorActivity extends Activity {
         if (getActionBar() != null) {
             getActionBar().hide();
         }
+        
+        SharedPreferences prefsFontSize = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+        currentEditorFontSize = prefsFontSize.getInt("editor_font_size", 14);
 
         appFont = Typeface.createFromAsset(
                 getAssets(), "fonts/SpaceMono-Bold.ttf");
@@ -79,6 +94,7 @@ public class EditorActivity extends Activity {
         btnRedo = findViewById(R.id.btn_redo);
         btnRun = findViewById(R.id.btn_run);
         tabContainer = findViewById(R.id.tab_container);
+        colorPickerView = findViewById(R.id.color_picker_view);
 
         setupBottomIcon(sideBarBtn, "\uf07b", solidFont);
         setupBottomIcon(btnBack, "\uf060", solidFont);
@@ -95,10 +111,80 @@ public class EditorActivity extends Activity {
         treeList = findViewById(R.id.tree_list);
         treeRootName = findViewById(R.id.tree_root_name);
         treeUpBtn = findViewById(R.id.tree_up_btn);
+        settingsBtn = findViewById(R.id.settings_btn);
+        createFolder = findViewById(R.id.create_folder);
+        createFile = findViewById(R.id.create_file);
+        palette = findViewById(R.id.palette);
+        colorPickerWheel = findViewById(R.id.color_picker_wheel);
+        colorPreview = findViewById(R.id.color_preview);
+        colorHexText = findViewById(R.id.color_hex_text);
+        btnInsertColor = findViewById(R.id.btn_insert_color);
+        btnClosePalette = findViewById(R.id.btn_close_palette);
+        reduceFontSize = findViewById(R.id.reduce_font_size);
+        increaseFontSize = findViewById(R.id.increase_font_size);
+        currentFontSize = findViewById(R.id.current_font_size);
+        gotoLineInput = findViewById(R.id.goto_line_input);
+        btnGoToLine = findViewById(R.id.btn_goto_line);
         
         treeRootName.setTypeface(appFont);
         treeUpBtn.setTypeface(solidFont);
-        treeUpBtn.setText("\uf062"); // Arrow Up icon
+        treeUpBtn.setText("\uf062");
+        settingsBtn.setTypeface(solidFont);
+        settingsBtn.setText("\uf013");
+        createFolder.setTypeface(solidFont);
+        createFolder.setText("\uf65e");
+        createFile.setTypeface(solidFont);
+        createFile.setText("\uf067");
+        reduceFontSize.setTypeface(solidFont);
+        reduceFontSize.setText("\uf068");
+        increaseFontSize.setTypeface(solidFont);
+        increaseFontSize.setText("\uf067");
+        currentFontSize.setText(currentEditorFontSize + "px");
+        gotoLineInput.setTypeface(appFont);
+        gotoLineInput.setHint("1 - 0");
+        
+        reduceFontSize.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (currentEditorFontSize > 8) { // Minimum size limit
+                    currentEditorFontSize--;
+                    currentFontSize.setText(currentEditorFontSize + "px");
+                    updateEditorFontSize();
+                }
+            }
+        });
+
+        increaseFontSize.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (currentEditorFontSize < 32) { // Maximum size limit
+                    currentEditorFontSize++;
+                    currentFontSize.setText(currentEditorFontSize + "px");
+                    updateEditorFontSize();
+                }
+            }
+        });
+        
+        btnGoToLine.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String input = gotoLineInput.getText().toString().trim();
+                if (!input.isEmpty()) {
+                    try {
+                        int line = Integer.parseInt(input);
+                        if (line > 0) {
+                            goToLine(line);
+                            gotoLineInput.setText(""); // Clear input after jump
+                            editorDrawer.closeDrawer(Gravity.LEFT); // Close sidebar
+                        } else {
+                            AppToast.showInfo(EditorActivity.this, "Line must be greater than 0");
+                        }
+                    } catch (NumberFormatException e) {
+                        AppToast.showError(EditorActivity.this, "Invalid number");
+                    }
+                }
+            }
+        });
         
         // Open drawer when sidebar button is clicked
         sideBarBtn.setOnClickListener(new View.OnClickListener() {
@@ -117,6 +203,109 @@ public class EditorActivity extends Activity {
                 }
             }
         });
+        
+        settingsBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                android.content.Intent intent = new android.content.Intent(EditorActivity.this, EditorSettingsActivity.class);
+                startActivity(intent);
+            }
+        });
+        
+        createFolder.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showCreateFolderDialog();
+            }
+        });
+
+        createFile.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showCreateFileDialog();
+            }
+        });
+        
+        palette.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                editorDrawer.closeDrawer(Gravity.LEFT);
+                colorPickerView.setVisibility(View.VISIBLE);
+            }
+        });
+        
+        colorPickerView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                colorPickerView.setVisibility(View.GONE);
+            }
+        });
+        
+        // Handle color changes from the wheel
+        colorPickerWheel.setOnColorChangedListener(new ColorPickerView.OnColorChangedListener() {
+            @Override
+            public void onColorChanged(int color) {
+                // Update preview box
+                colorPreview.setBackgroundColor(color);
+                
+                // Convert integer color to Hex String (e.g., #FF0000)
+                String hex = String.format("#%06X", (0xFFFFFF & color));
+                
+                if (!colorHexText.getText().toString().equalsIgnoreCase(hex)) {
+                    colorHexText.setText(hex);
+                    colorHexText.setSelection(hex.length()); // Move cursor to end
+                }
+            }
+        });
+        
+        colorHexText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                String hex = s.toString().trim();
+                
+                // If the user types 6 characters without a hash, add it automatically
+                if (hex.length() == 6 && !hex.startsWith("#")) {
+                    hex = "#" + hex;
+                    colorHexText.setText(hex);
+                    colorHexText.setSelection(7);
+                    return;
+                }
+
+                // If it's a valid 7-character hex code, update the UI
+                if (hex.length() == 7 && hex.startsWith("#")) {
+                    try {
+                        int color = Color.parseColor(hex);
+                        colorPreview.setBackgroundColor(color);
+                        colorPickerWheel.setColorFromHex(color);
+                    } catch (IllegalArgumentException e) {
+                        // Ignore incomplete or invalid hex codes while typing
+                    }
+                }
+            }
+        });
+
+        // Handle Insert Button
+        btnInsertColor.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String hex = colorHexText.getText().toString();
+                codeEditorWebView.evaluateJavascript("insertText('" + hex + "');", null);
+                colorPickerView.setVisibility(View.GONE);
+            }
+        });
+        
+        btnClosePalette.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                colorPickerView.setVisibility(View.GONE);
+            }
+        });
 
         // Handle file clicks in the tree
         treeList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -126,9 +315,53 @@ public class EditorActivity extends Activity {
                 if (clickedFile.isDirectory()) {
                     loadTree(clickedFile);
                 } else {
-                    loadFile(clickedFile);
-                    buildTabs();
-                    editorDrawer.closeDrawer(Gravity.LEFT);
+                    String filePath = clickedFile.getAbsolutePath();
+                    String ext = "";
+                    int dotIndex = filePath.lastIndexOf('.');
+                    if (dotIndex != -1) {
+                        ext = filePath.substring(dotIndex + 1).toLowerCase();
+                    }
+                    
+                    boolean textFiles = ext.equals("py") ||
+                        ext.equals("java") ||
+                        ext.equals("xml") ||
+                        ext.equals("txt") ||
+                        ext.equals("md") ||
+                        ext.equals("js") ||
+                        ext.equals("json") ||
+                        ext.equals("html") ||
+                        ext.equals("css") ||
+                        ext.equals("gitignore") ||
+                        ext.equals("gradle") ||
+                        ext.equals("pro") ||
+                        ext.equals("svg") ||
+                        ext.equals("sh") ||
+                        ext.equals("");
+                    
+                    if (textFiles) {
+                        android.content.SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                        String recentStr = prefs.getString("recent_files", "");
+                        ArrayList<String> recentList = new ArrayList<>();
+                        
+                        if (!recentStr.isEmpty()) {
+                            String[] arr = recentStr.split("\n");
+                            for (String s : arr) recentList.add(s);
+                        }
+                        
+                        while (recentList.contains(filePath)) recentList.remove(filePath);
+                        recentList.add(0, filePath);
+                        while (recentList.size() > 20) recentList.remove(recentList.size() - 1);
+                        
+                        StringBuilder sb = new StringBuilder();
+                        for (String s : recentList) sb.append(s).append("\n");
+                        prefs.edit().putString("recent_files", sb.toString().trim()).apply();
+                    
+                        loadFile(clickedFile);
+                        buildTabs();
+                        editorDrawer.closeDrawer(Gravity.LEFT);
+                    } else {
+                        Toast.makeText(EditorActivity.this, "Feature not available yet.", Toast.LENGTH_LONG).show();
+                    }
                 }
             }
         });
@@ -153,11 +386,20 @@ public class EditorActivity extends Activity {
                             public void onReceiveValue(String result) {
                                 editorReady = "true".equals(result);
 
-                                if (editorReady && pendingCode != null) {
-                                    sendCodeToEditor(
-                                            pendingCode, pendingExtension);
-
-                                    pendingCode = null;
+                                if (editorReady) {
+                                    SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                                    boolean wrap = prefs.getBoolean("editor_word_wrap", false);
+                                    boolean lines = prefs.getBoolean("editor_line_numbers", true);
+                                    
+                                    codeEditorWebView.evaluateJavascript("setWordWrap(" + wrap + ");", null);
+                                    codeEditorWebView.evaluateJavascript("setShowLineNumbers(" + lines + ");", null);
+                                    
+                                    updateEditorFontSize();
+                                    
+                                    if (pendingCode != null) {
+                                        sendCodeToEditor(pendingCode, pendingExtension);
+                                        pendingCode = null;
+                                    }
                                 }
                             }
                         }
@@ -184,7 +426,7 @@ public class EditorActivity extends Activity {
                         filePath = path;
                         break; // Stop once we find the most recent valid file
                     }
-                        }
+                }
             }
         }
 
@@ -234,12 +476,12 @@ public class EditorActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (!editorReady) {
-                    Toast.makeText(EditorActivity.this, "Editor is still loading...", Toast.LENGTH_SHORT).show();
+                    AppToast.showInfo(EditorActivity.this, "Editor is still loading...");
                     return;
                 }
 
                 if (currentFile == null) {
-                    Toast.makeText(EditorActivity.this, "No file open.", Toast.LENGTH_SHORT).show();
+                    AppToast.showInfo(EditorActivity.this, "No file open.");
                     return;
                 }
 
@@ -250,9 +492,26 @@ public class EditorActivity extends Activity {
                     ext = name.substring(dotIndex + 1).toLowerCase();
                 }
 
-                // Only run web files for now
+                if (ext.equals("py")) {
+                    codeEditorWebView.evaluateJavascript("getCode();", new android.webkit.ValueCallback<String>() {
+                        @Override
+                        public void onReceiveValue(String result) {
+                            try {
+                                String cleanCode = new JSONArray("[" + result + "]").getString(0);
+                                android.content.Intent intent = new android.content.Intent(EditorActivity.this, ConsoleActivity.class);
+                                intent.putExtra("python_code", cleanCode);
+                                intent.putExtra("python_dir", currentFile.getParent()); 
+                                startActivity(intent);
+                            } catch (Exception e) {
+                                AppToast.showError(EditorActivity.this, "Error getting code: " + e.getMessage());
+                            }
+                        }
+                    });
+                    return;
+                }
+                
                 if (!ext.equals("html") && !ext.equals("css") && !ext.equals("js")) {
-                    Toast.makeText(EditorActivity.this, "Running ." + ext + " is not supported yet.", Toast.LENGTH_LONG).show();
+                    AppToast.showError(EditorActivity.this, "Running ." + ext + " is not supported yet.");
                     return;
                 }
 
@@ -287,7 +546,7 @@ public class EditorActivity extends Activity {
                             startActivity(intent);
 
                         } catch (Exception e) {
-                            Toast.makeText(EditorActivity.this, "Error launching preview: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            AppToast.showError(EditorActivity.this, "Error launching preview: " + e.getMessage());
                         }
                     }
                 });
@@ -335,6 +594,18 @@ public class EditorActivity extends Activity {
     
             return "";
         }
+        
+        @JavascriptInterface
+        public void updateLineCount(final int count) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (gotoLineInput != null) {
+                        gotoLineInput.setHint("1 - " + count);
+                    }
+                }
+            });
+        }
     }
     
     private void loadTree(File dir) {
@@ -369,6 +640,12 @@ public class EditorActivity extends Activity {
         view.setTypeface(font);
         view.setText(unicode);
     }
+    
+    private void goToLine(int line) {
+        if (editorReady) {
+            codeEditorWebView.evaluateJavascript("goToLine(" + line + ");", null);
+        }
+    }
 
     private void runEditorCommand(String command) {
         if (editorReady) {
@@ -391,12 +668,16 @@ public class EditorActivity extends Activity {
 
         codeEditorWebView.evaluateJavascript(jsCommand, null);
     }
+    
+    private void updateEditorFontSize() {
+        if (editorReady) {
+            codeEditorWebView.evaluateJavascript("setEditorFontSize(" + currentEditorFontSize + ");", null);
+        }
+    }
 
     private void loadFile(File file) {
         if (file == null || !file.exists() || !file.isFile()) {
-            Toast.makeText(
-                    this, "File not found.", Toast.LENGTH_SHORT
-            ).show();
+            AppToast.showError(EditorActivity.this, "File not found.");
             return;
         }
 
@@ -446,27 +727,98 @@ public class EditorActivity extends Activity {
             }
 
         } catch (Exception e) {
-            Toast.makeText(
-                    this,
-                    "Error reading file: " + e.getMessage(),
-                    Toast.LENGTH_LONG
-            ).show();
+            AppToast.showError(EditorActivity.this, "Error reading file: " + e.getMessage());
         }
+    }
+    
+    private void showCreateFolderDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(EditorActivity.this);
+        builder.setTitle("New Folder");
+        final EditText input = new EditText(EditorActivity.this);
+        input.setHint("e.g., Folder");
+        input.setPadding(40, 40, 40, 40); 
+        builder.setView(input);
+        builder.setPositiveButton("Create", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String folderName = input.getText().toString().trim();
+                if (folderName.isEmpty()) {
+                    AppToast.showError(EditorActivity.this, "Folder name cannot be empty.");
+                    return;
+                }
+                
+                // Ensure we have a valid directory to create it in
+                if (treeCurrentDir == null) {
+                    AppToast.showInfo(EditorActivity.this, "No directory open.");
+                    return;
+                }
+                
+                File newFolder = new File(treeCurrentDir, folderName);
+                if (newFolder.mkdir()) {
+                    AppToast.showSuccess(EditorActivity.this, "Created: " + folderName);
+                    
+                    // --- FIXED: Just refresh the current tree ---
+                    loadTree(treeCurrentDir);
+                    
+                } else {
+                    AppToast.showError(EditorActivity.this, "Folder already exists!");
+                }
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+    
+    private void showCreateFileDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(EditorActivity.this);
+        builder.setTitle("New File");
+        final EditText input = new EditText(EditorActivity.this);
+        input.setHint("e.g., main.py");
+        input.setPadding(40, 40, 40, 40); 
+        builder.setView(input);
+        builder.setPositiveButton("Create", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String fileName = input.getText().toString().trim();
+                if (fileName.isEmpty()) {
+                    AppToast.showError(EditorActivity.this, "File name cannot be empty.");
+                    return;
+                }
+                
+                // Ensure we have a valid directory to create it in
+                if (treeCurrentDir == null) {
+                    AppToast.showError(EditorActivity.this, "No directory open.");
+                    return;
+                }
+                
+                File newFile = new File(treeCurrentDir, fileName);
+                try {
+                    if (newFile.createNewFile()) {
+                        AppToast.showSuccess(EditorActivity.this, "Created: " + fileName);
+                        
+                        // --- FIXED: Just refresh the current tree ---
+                        loadTree(treeCurrentDir);
+                        
+                    } else {
+                        AppToast.showError(EditorActivity.this, "File already exists!");
+                    }
+                } catch (IOException e) {
+                    AppToast.showError(EditorActivity.this, "Error creating file: " + e.getMessage());
+                }
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
     }
 
     private void saveCurrentFile() {
         if (currentFile == null) {
-            Toast.makeText(
-                    this, "No file selected.", Toast.LENGTH_SHORT
-            ).show();
+            AppToast.showError(EditorActivity.this, "No file selected.");
             return;
         }
 
         if (!editorReady) {
-            Toast.makeText(
-                    this, "Editor is still loading.",
-                    Toast.LENGTH_SHORT
-            ).show();
+            AppToast.showInfo(EditorActivity.this, "Editor is still loading.");
             return;
         }
 
@@ -493,18 +845,16 @@ public class EditorActivity extends Activity {
                                 writer.write(cleanCode);
                             }
 
-                            Toast.makeText(
+                            AppToast.showSuccess(
                                     EditorActivity.this,
-                                    "Saved successfully! ✔️",
-                                    Toast.LENGTH_SHORT
-                            ).show();
+                                    "Saved successfully! ✔️"
+                            );
 
                         } catch (Exception e) {
-                            Toast.makeText(
+                            AppToast.showError(
                                     EditorActivity.this,
-                                    "Error saving: " + e.getMessage(),
-                                    Toast.LENGTH_LONG
-                            ).show();
+                                    "Error saving: " + e.getMessage()
+                            );
                         }
                     }
                 }
@@ -541,9 +891,7 @@ public class EditorActivity extends Activity {
                     && currentFile.getAbsolutePath().equals(
                             f.getAbsolutePath())) {
                 tabLayout.setBackgroundResource(R.drawable.tab_active);
-            } /*else {
-                tabLayout.setBackgroundResource(R.drawable.tab_inactive);
-            }*/
+            }
 
             TextView tabName = new TextView(this);
             tabName.setText(f.getName());
@@ -616,6 +964,32 @@ public class EditorActivity extends Activity {
         }
 
         buildTabs();
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+    
+        // Reload preferences when returning from Settings
+        SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+        int newSize = prefs.getInt("editor_font_size", 14);
+        boolean wrap = prefs.getBoolean("editor_word_wrap", false);
+        boolean lines = prefs.getBoolean("editor_line_numbers", true);
+
+        // Update font size if it changed
+        if (newSize != currentEditorFontSize) {
+            currentEditorFontSize = newSize;
+            if (currentFontSize != null) {
+                currentFontSize.setText(currentEditorFontSize + "px");
+            }
+            updateEditorFontSize();
+        }
+    
+        // Update Word Wrap and Line Numbers
+        if (editorReady) {
+            codeEditorWebView.evaluateJavascript("setWordWrap(" + wrap + ");", null);
+            codeEditorWebView.evaluateJavascript("setShowLineNumbers(" + lines + ");", null);
+        }
     }
     
     @Override

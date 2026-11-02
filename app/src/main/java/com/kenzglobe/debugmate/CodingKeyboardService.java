@@ -1,45 +1,71 @@
 package com.kenzglobe.debugmate;
 
+import android.content.Context;
 import android.inputmethodservice.InputMethodService;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodManager;
 import java.util.List;
 
-public class CodingKeyboardService extends InputMethodService
-        implements KeyboardView.OnKeyboardActionListener {
+public class CodingKeyboardService extends InputMethodService implements KeyboardView.OnKeyboardActionListener {
+
+    private static final int KEY_COPY = -106;
+    private static final int KEY_CUT = -107;
+    private static final int KEY_PASTE = -108;
+    private static final int KEY_CTRL = -109;
+    private static final int KEY_SELECT_ALL = -110;
+    private static final int KEY_SETTINGS = -111;
+    private static final int KEY_CLIPBOARD = -112;
 
     private CustomKeyboardView kv;
     private Keyboard keyboardQwerty;
     private Keyboard keyboardSymbols;
-    
+
     private boolean isCaps = false;
     private boolean isCapsLock = false;
+    private boolean isCtrl = false;
     private long lastShiftPressTime = 0;
+
+    // --- For Delete Repeat ---
+    private Handler deleteHandler = new Handler(Looper.getMainLooper());
+    private Runnable deleteRunnable;
+    private boolean isDeleting = false;
 
     @Override
     public View onCreateInputView() {
         View view = getLayoutInflater().inflate(R.layout.keyboard, null);
         kv = view.findViewById(R.id.keyboard_view);
-        
         keyboardQwerty = new Keyboard(this, R.xml.qwerty_coding);
         keyboardSymbols = new Keyboard(this, R.xml.symbols_coding);
-        
+
         kv.setKeyboard(keyboardQwerty);
         kv.setOnKeyboardActionListener(this);
-        
         return view;
     }
 
-    // Helper to change the Caps key icon dynamically
+    @Override
+    public void onStartInputView(EditorInfo info, boolean restarting) {
+        super.onStartInputView(info, restarting);
+        if (kv != null) {
+            kv.setKeyboard(keyboardQwerty);
+            isCtrl = false;
+            isCaps = false; // <--- FIX: Changed isShift to isCaps
+            updateCtrlLabel();
+            updateShiftIcon(R.drawable.ic_caps_regular);
+        }
+    }
+
     private void updateShiftIcon(int resId) {
-        if (keyboardQwerty == null) return;
+        if (keyboardQwerty == null || kv == null) return;
         List<Keyboard.Key> keys = keyboardQwerty.getKeys();
         for (Keyboard.Key key : keys) {
             if (key.codes[0] == Keyboard.KEYCODE_SHIFT) {
-                // THE FIX: Convert the integer ID into a Drawable object
                 key.icon = getResources().getDrawable(resId);
                 key.label = null;
                 kv.invalidateAllKeys();
@@ -48,11 +74,74 @@ public class CodingKeyboardService extends InputMethodService
         }
     }
 
+    private void updateCtrlLabel() {
+        if (keyboardQwerty == null || kv == null) return;
+        List<Keyboard.Key> keys = keyboardQwerty.getKeys();
+        for (Keyboard.Key key : keys) {
+            if (key.codes[0] == KEY_CTRL) {
+                key.label = isCtrl ? "•" : "CTRL";
+                kv.invalidateAllKeys();
+                break;
+            }
+        }
+    }
+
+    // Arrow keys now respect Shift for selection
+    private void sendArrowKey(InputConnection ic, int keyCode) {
+        int metaState = isCaps ? KeyEvent.META_SHIFT_ON : 0;
+        ic.sendKeyEvent(new KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, metaState));
+        ic.sendKeyEvent(new KeyEvent(0, 0, KeyEvent.ACTION_UP, keyCode, 0, metaState));
+    }
+
+    private void sendCtrlLetter(InputConnection ic, char letter) {
+        char lower = Character.toLowerCase(letter);
+        if (lower < 'a' || lower > 'z') {
+            isCtrl = false;
+            updateCtrlLabel();
+            return;
+        }
+        int keyCode = KeyEvent.KEYCODE_A + (lower - 'a');
+        int metaState = KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON;
+        ic.sendKeyEvent(new KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, metaState));
+        ic.sendKeyEvent(new KeyEvent(0, 0, KeyEvent.ACTION_UP, keyCode, 0, metaState));
+        
+        isCtrl = false;
+        updateCtrlLabel();
+    }
+
+    // --- Handle Key Presses (Repeat Logic) ---
     @Override
-    public void onPress(int primaryCode) {}
+    public void onPress(int primaryCode) {
+        if (primaryCode == Keyboard.KEYCODE_DELETE) {
+            isDeleting = true;
+            deleteRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    if (isDeleting) {
+                        InputConnection ic = getCurrentInputConnection();
+                        if (ic != null) {
+                            ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
+                            ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
+                        }
+                        // Delete every 50ms
+                        deleteHandler.postDelayed(this, 50);
+                    }
+                }
+            };
+            // Start repeating after a 400ms delay
+            deleteHandler.postDelayed(deleteRunnable, 400);
+        }
+    }
 
     @Override
-    public void onRelease(int primaryCode) {}
+    public void onRelease(int primaryCode) {
+        if (primaryCode == Keyboard.KEYCODE_DELETE) {
+            isDeleting = false;
+            if (deleteRunnable != null) {
+                deleteHandler.removeCallbacks(deleteRunnable);
+            }
+        }
+    }
 
     @Override
     public void onKey(int primaryCode, int[] keyCodes) {
@@ -61,26 +150,21 @@ public class CodingKeyboardService extends InputMethodService
 
         switch (primaryCode) {
             case Keyboard.KEYCODE_DELETE:
-                ic.deleteSurroundingText(1, 0);
-                break;
-                
+                // Send KEYCODE_DEL so it deletes selected text if there is any
+                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
+                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
+                return;
+
             case Keyboard.KEYCODE_SHIFT:
                 long currentTime = System.currentTimeMillis();
-                
-                // Check for double tap (within 300ms)
                 if (currentTime - lastShiftPressTime < 300) {
-                    isCapsLock = !isCapsLock; // Toggle Caps Lock
+                    isCapsLock = !isCapsLock;
                     isCaps = isCapsLock;
                 } else {
-                    // Single tap
                     isCaps = !isCaps;
-                    if (!isCaps) {
-                        isCapsLock = false; // Turn off caps lock if manually going back to lowercase
-                    }
+                    if (!isCaps) isCapsLock = false;
                 }
                 lastShiftPressTime = currentTime;
-
-                // Update Icons based on state
                 if (isCapsLock) {
                     updateShiftIcon(R.drawable.ic_caps_locked);
                 } else if (isCaps) {
@@ -88,86 +172,97 @@ public class CodingKeyboardService extends InputMethodService
                 } else {
                     updateShiftIcon(R.drawable.ic_caps_regular);
                 }
-
                 keyboardQwerty.setShifted(isCaps);
                 kv.invalidateAllKeys();
-                break;
-                
-            case Keyboard.KEYCODE_DONE:
-            case 10: // Enter
-                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
-                break;
-                
-            case 9: // Tab
-                ic.commitText("    ", 1);
-                break;
+                return;
 
-            // --- SWITCHING KEYBOARDS ---
-            case -102: // Switch to Symbols
+            case Keyboard.KEYCODE_DONE:
+            case 10:
+                sendArrowKey(ic, KeyEvent.KEYCODE_ENTER);
+                return;
+
+            case 9:
+                ic.commitText("    ", 1);
+                return;
+
+            case KEY_COPY:
+                ic.performContextMenuAction(android.R.id.copy);
+                return;
+
+            case KEY_CUT:
+                ic.performContextMenuAction(android.R.id.cut);
+                return;
+
+            case KEY_PASTE:
+            case KEY_CLIPBOARD:
+                ic.performContextMenuAction(android.R.id.paste);
+                return;
+
+            case KEY_CTRL:
+                isCtrl = !isCtrl;
+                updateCtrlLabel();
+                return;
+
+            case KEY_SELECT_ALL:
+                ic.performContextMenuAction(android.R.id.selectAll);
+                return;
+
+            case KEY_SETTINGS:
+                InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.showInputMethodPicker();
+                return;
+
+            case -102: // SYMBOLS
+                isCtrl = false;
+                isCaps = false;
+                updateCtrlLabel();
+                updateShiftIcon(R.drawable.ic_caps_regular);
                 kv.setKeyboard(keyboardSymbols);
-                break;
-            case -103: // Switch to ABC
+                return;
+
+            case -103: // ABC
+                isCtrl = false;
+                isCaps = false;
+                updateCtrlLabel();
+                updateShiftIcon(R.drawable.ic_caps_regular);
                 kv.setKeyboard(keyboardQwerty);
-                break;
-                
-            // --- ARROW KEYS ---
-            case -100: ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT)); break;
-            case -101: ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT)); break;
-            case -104: ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_UP)); break;
-            case -105: ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_DOWN)); break;
-                
-            // --- AUTO PAIRING ---
-            case 40: // (
-                ic.commitText("()", 1);
-                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
-                break;
-            case 123: // {
-                ic.commitText("{}", 1);
-                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
-                break;
-            case 34: // "
-                ic.commitText("\"\"", 1);
-                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
-                break;
-            case 39: // '
-                ic.commitText("''", 1);
-                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
-                break;
-            case 91: // [
-                ic.commitText("[]", 1);
-                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
-                break;
+                return;
+
+            case -100: sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT); return;
+            case -101: sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_RIGHT); return;
+            case -104: sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_UP); return;
+            case -105: sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_DOWN); return;
+
+            case 40: ic.commitText("()", 1); sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT); return;
+            case 123: ic.commitText("{}", 1); sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT); return;
+            case 34: ic.commitText("\"\"", 1); sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT); return;
+            case 39: ic.commitText("''", 1); sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT); return;
+            case 91: ic.commitText("[]", 1); sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT); return;
 
             default:
-                char code = (char) primaryCode;
-                
-                // If it's a letter and caps is on
-                if (Character.isLetter(code) && isCaps) {
-                    code = Character.toUpperCase(code);
-                    
-                    // If NOT caps lock, turn off shift after one letter
-                    if (!isCapsLock) {
+                if (primaryCode > 0) {
+                    char code = (char) primaryCode;
+                    if (Character.isLetter(code) && isCaps) {
+                        code = Character.toUpperCase(code);
+                    }
+                    if (isCtrl && Character.isLetter(code)) {
+                        sendCtrlLetter(ic, code);
+                        return;
+                    }
+                    ic.commitText(String.valueOf(code), 1);
+                    if (Character.isLetter(code) && isCaps && !isCapsLock) {
                         isCaps = false;
                         keyboardQwerty.setShifted(false);
                         updateShiftIcon(R.drawable.ic_caps_regular);
                     }
                 }
-                ic.commitText(String.valueOf(code), 1);
+                break;
         }
     }
 
-    @Override
-    public void onText(CharSequence text) {}
-
-    @Override
-    public void swipeLeft() {}
-
-    @Override
-    public void swipeRight() {}
-
-    @Override
-    public void swipeDown() {}
-
-    @Override
-    public void swipeUp() {}
+    @Override public void onText(CharSequence text) {}
+    @Override public void swipeLeft() {}
+    @Override public void swipeRight() {}
+    @Override public void swipeDown() {}
+    @Override public void swipeUp() {}
 }

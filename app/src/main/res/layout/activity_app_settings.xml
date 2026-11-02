@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#262626">
+
+    <!-- Top Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:orientation="horizontal"
+        android:background="#8B5CF6"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/btn_app_settings_back"
+            android:layout_width="55dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp" />
+
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:text="App Settings"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp" />
+            
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#DDDDDD" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Section: File Manager -->
+            <com.kenzglobe.debugmate.AppBoldTextView
+                style="@style/SettingTitle"
+                android:text="File Manager" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/settings_section_bg"
+                android:elevation="6dp"
+                android:paddingHorizontal="12dp">
+                
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="10dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        
+                        <com.kenzglobe.debugmate.AppBoldTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Show Hidden Files"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+                        
+                        <com.kenzglobe.debugmate.AppTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Display files starting with a dot (.)"
+                            android:textColor="#888888"
+                            android:textSize="12sp" />
+                            
+                    </LinearLayout>
+                    
+                    <Switch
+                        android:id="@+id/switch_show_hidden"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#333333" />
+                
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="10dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        
+                        <com.kenzglobe.debugmate.AppBoldTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Show File Sizes"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+                        
+                        <com.kenzglobe.debugmate.AppTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Display the size next to files"
+                            android:textColor="#888888"
+                            android:textSize="12sp" />
+                            
+                    </LinearLayout>
+                    
+                    <Switch
+                        android:id="@+id/switch_show_sizes"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    
+                </LinearLayout>
+                
+            </LinearLayout>
+
+            <!-- Section: About -->
+            <com.kenzglobe.debugmate.AppBoldTextView
+                style="@style/SettingTitle"
+                android:text="About DebugMate" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/settings_section_bg"
+                android:elevation="6dp"
+                android:paddingHorizontal="12dp">
+                
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="10dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <com.kenzglobe.debugmate.AppBoldTextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Version"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp" />
+
+                    <com.kenzglobe.debugmate.AppTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/app_version"
+                        android:textColor="#888888"
+                        android:textSize="14sp" />
+                    
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#333333" />
+                
+                <LinearLayout
+                    android:id="@+id/layout_github_link"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="10dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <com.kenzglobe.debugmate.AppBoldTextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="GitHub Repository"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp" />
+
+                    <com.kenzglobe.debugmate.AppTextView
+                        android:id="@+id/icon_github_link"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#888888"
+                        android:textSize="20sp" />
+                    
+                </LinearLayout>
+                
+            </LinearLayout>
+
+        </LinearLayout>
+        
+    </ScrollView>
+    
+</LinearLayout>

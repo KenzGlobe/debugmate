@@ -14,6 +14,5 @@ public class AppBoldTextView extends TextView {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        // Hello
     }
 }

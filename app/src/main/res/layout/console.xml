@@ -3,47 +3,51 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#1E1E1E">
+    android:background="#000000">
 
-    <!-- Top Bar -->
+    <!-- Top Bar (Purple) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="40dp"
         android:orientation="horizontal"
-        android:background="#262626"
+        android:background="#8B5CF6"
         android:gravity="center_vertical">
 
+        <!-- Back Arrow -->
         <TextView
             android:id="@+id/btn_console_close"
-            android:layout_width="45dp"
+            android:layout_width="55dp"
             android:layout_height="match_parent"
             android:gravity="center"
             android:textColor="#FFFFFF"
             android:textSize="22sp" />
 
+        <!-- Title -->
         <com.kenzglobe.debugmate.AppBoldTextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center_vertical"
-            android:paddingStart="10dp"
-            android:text="JavaScript Console"
+            android:text="Python Console"
             android:textColor="#FFFFFF"
-            android:textSize="15sp" />
+            android:textSize="20sp" />
 
+        <!-- Clear Button -->
         <TextView
             android:id="@+id/btn_console_clear"
-            android:layout_width="45dp"
+            android:layout_width="55dp"
             android:layout_height="match_parent"
             android:gravity="center"
             android:textColor="#FFFFFF"
             android:textSize="20sp" />
+            
     </LinearLayout>
 
+    <!-- 1dp Divider -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#333333" />
+        android:background="#DDDDDD" />
 
     <!-- Output Area -->
     <ScrollView
@@ -51,15 +55,17 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="8dp">
+        android:padding="8dp"
+        android:fadeScrollbars="false">
 
         <TextView
             android:id="@+id/console_output"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="monospace"
-            android:textColor="#D4D4D4"
+            android:textColor="#E6E6E6"
             android:textSize="13sp" />
+            
     </ScrollView>
 
     <!-- Input Area -->
@@ -67,17 +73,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="#262626"
-        android:padding="8dp">
+        android:background="#1E1E1E"
+        android:padding="8dp"
+        android:layout_marginTop="8dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="> "
+            android:text=">>> "
             android:textColor="#8B5CF6"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:fontFamily="monospace" />
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
         <EditText
             android:id="@+id/console_input"
@@ -85,16 +91,16 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@null"
-            android:fontFamily="monospace"
-            android:hint="Type JavaScript here..."
+            android:hint="Type Python here..."
             android:imeOptions="actionSend"
             android:inputType="textNoSuggestions"
-            android:textColor="#FFFFFF"
+            android:textColor="#E6E6E6"
             android:textColorHint="#666666"
             android:textSize="14sp" />
+            
     </LinearLayout>
 
-    <!-- Hidden WebView to execute JavaScript -->
+    <!-- Hidden WebView -->
     <WebView
         android:id="@+id/console_webview"
         android:layout_width="1dp"

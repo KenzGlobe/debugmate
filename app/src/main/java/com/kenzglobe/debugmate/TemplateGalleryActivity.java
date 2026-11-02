@@ -111,7 +111,7 @@ public class TemplateGalleryActivity extends Activity {
                 String projectName = input.getText().toString().trim();
 
                 if (!isValidProjectName(projectName)) {
-                    Toast.makeText(TemplateGalleryActivity.this, "Invalid project name.", Toast.LENGTH_SHORT).show();
+                    AppToast.showError(TemplateGalleryActivity.this, "Invalid project name.");
                     return;
                 }
 
@@ -125,7 +125,6 @@ public class TemplateGalleryActivity extends Activity {
 
     private boolean isValidProjectName(String name) {
         if (name.isEmpty() || name.equals(".") || name.equals("..")) return false;
-
         return !name.matches(".*[\\\\/:*?\"<>|].*");
     }
 
@@ -169,7 +168,7 @@ public class TemplateGalleryActivity extends Activity {
             ProjectItem newProject = new ProjectItem(projectName, type, projectFolder.getAbsolutePath(), "Custom");
             ProjectManager.saveProject(this, newProject);
 
-            Toast.makeText(this, "Project '" + projectName + "' created successfully!", Toast.LENGTH_LONG).show();
+            AppToast.showSuccess(this, "Project '" + projectName + "' created successfully!");
             finish();
 
         } catch (IOException e) {
@@ -290,7 +289,7 @@ public class TemplateGalleryActivity extends Activity {
     }
 
     private void showError(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        AppToast.showError(this, message);
     }
     
     @Override

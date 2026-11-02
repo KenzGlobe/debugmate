@@ -62,7 +62,7 @@ public class ProjectListActivity extends Activity {
                     intent.putExtra("START_DIRECTORY", item.path);
                     startActivity(intent);
                 } else {
-                    Toast.makeText(ProjectListActivity.this, "Project folder not found on disk.", Toast.LENGTH_LONG).show();
+                    AppToast.showError(ProjectListActivity.this, "Project folder not found on disk.");
                 }
             }
         });

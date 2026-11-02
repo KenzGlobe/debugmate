@@ -20,7 +20,7 @@
             left: 0;
             right: 0;
             font-family: monospace;
-            font-size: 12px;
+            font-size: 14px;
         }
 
         /* DebugMate custom editor colors */
@@ -147,12 +147,6 @@
 
         .fr-button:active {
             background: #7041D8;
-        }
-
-        .fr-button-secondary {
-            background: #303030;
-            border-color: #494949;
-            color: #E0E0E0;
         }
 
         .fr-options {
@@ -344,7 +338,6 @@
             }
         }
 
-
     </style>
 </head>
 
@@ -354,46 +347,45 @@
     <!-- DebugMate Custom Selection Toolbar -->
     <div id="debugMateSelectionToolbar">
         <div class="dm-toolbar-row">
-    
+
             <button type="button" class="dm-tool-button"
                 data-action="copy" aria-label="Copy">
                 <span class="dm-tool-icon">▢</span>
                 <span class="dm-tool-label">Copy</span>
             </button>
-    
+
             <button type="button" class="dm-tool-button"
                 data-action="cut" aria-label="Cut">
                 <span class="dm-tool-icon">✂</span>
                 <span class="dm-tool-label">Cut</span>
             </button>
-    
+
             <button type="button" class="dm-tool-button"
                 data-action="paste" aria-label="Paste">
                 <span class="dm-tool-icon">▤</span>
                 <span class="dm-tool-label">Paste</span>
             </button>
-    
+
             <button type="button" class="dm-tool-button"
                 data-action="selectAll" aria-label="Select All">
                 <span class="dm-tool-icon">▧</span>
                 <span class="dm-tool-label">Select All</span>
             </button>
-    
+
             <button type="button" class="dm-tool-button"
                 data-action="toEnd" aria-label="To End">
                 <span class="dm-tool-icon">⇥</span>
                 <span class="dm-tool-label">To End</span>
             </button>
-    
+
             <button type="button" class="dm-tool-button"
                 data-action="toStart" aria-label="To Start">
                 <span class="dm-tool-icon">⇤</span>
                 <span class="dm-tool-label">To Start</span>
             </button>
-    
+
         </div>
     </div>
-
 
     <!-- Custom Find & Replace panel -->
     <div id="findReplacePanel">
@@ -412,7 +404,7 @@
                 autocomplete="off">
 
             <button type="button" id="frPrevious"
-                class="fr-button fr-button-secondary"
+                class="fr-button"
                 aria-label="Previous match">↑</button>
 
             <button type="button" id="frNext"
@@ -463,7 +455,6 @@
 
     <script>
         var editor = ace.edit("editor");
-        editor.setOption("selectionStyle", "text");
         
         // Local paths: no internet required
         ace.config.set("basePath", ".");
@@ -479,7 +470,6 @@
             enableBasicAutocompletion: true,
             enableLiveAutocompletion: true,
             enableSnippets: true,
-            enableMobileMenu: false,
             showLineNumbers: true,
             tabSize: 4
         });
@@ -927,6 +917,38 @@
             editor.focus();
         }
         
+        function insertText(text) {
+            if (window.editor) {
+                window.editor.insert(text);
+            }
+        }
+        
+        function setEditorFontSize(size) {
+            if (window.editor) {
+                window.editor.setFontSize(size + "px");
+            }
+        }
+        
+        function goToLine(line) {
+            if (window.editor) {
+                // Ace expects a 1-based line number
+                window.editor.gotoLine(line, 0, true); 
+                window.editor.focus();
+            }
+        }
+        
+        function setWordWrap(enabled) {
+            if (window.editor) {
+                window.editor.getSession().setUseWrapMode(enabled);
+            }
+        }
+        
+        function setShowLineNumbers(enabled) {
+            if (window.editor) {
+                window.editor.renderer.setShowGutter(enabled);
+            }
+        }
+        
         // Connect toolbar buttons
         for (var i = 0; i < dmToolbarButtons.length; i++) {
             dmToolbarButtons[i].addEventListener("click", function(event) {
@@ -999,6 +1021,12 @@
         });
 
         window.editorReady = true;
+        if (window.editor) {
+            window.editor.session.on('change', function() {
+                var totalLines = window.editor.session.getLength();
+                AndroidBridge.updateLineCount(totalLines);
+            });
+        }
     </script>
 </body>
 </html>
