@@ -52,6 +52,7 @@ public class EditorActivity extends Activity {
     private String pendingCode = null;
     private String pendingExtension = "text";
     private int currentEditorFontSize;
+    private int pendingJumpToLine = -1; // NEW: Stores the line to jump to
 
     private Typeface appFont, solidFont;
 
@@ -73,6 +74,9 @@ public class EditorActivity extends Activity {
         if (getActionBar() != null) {
             getActionBar().hide();
         }
+        
+        // NEW: Retrieve the line to jump to (if any)
+        pendingJumpToLine = getIntent().getIntExtra("jump_to_line", -1);
         
         SharedPreferences prefsFontSize = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
         currentEditorFontSize = prefsFontSize.getInt("editor_font_size", 14);
@@ -245,15 +249,11 @@ public class EditorActivity extends Activity {
         colorPickerWheel.setOnColorChangedListener(new ColorPickerView.OnColorChangedListener() {
             @Override
             public void onColorChanged(int color) {
-                // Update preview box
                 colorPreview.setBackgroundColor(color);
-                
-                // Convert integer color to Hex String (e.g., #FF0000)
                 String hex = String.format("#%06X", (0xFFFFFF & color));
-                
                 if (!colorHexText.getText().toString().equalsIgnoreCase(hex)) {
                     colorHexText.setText(hex);
-                    colorHexText.setSelection(hex.length()); // Move cursor to end
+                    colorHexText.setSelection(hex.length()); 
                 }
             }
         });
@@ -268,29 +268,22 @@ public class EditorActivity extends Activity {
             @Override
             public void afterTextChanged(Editable s) {
                 String hex = s.toString().trim();
-                
-                // If the user types 6 characters without a hash, add it automatically
                 if (hex.length() == 6 && !hex.startsWith("#")) {
                     hex = "#" + hex;
                     colorHexText.setText(hex);
                     colorHexText.setSelection(7);
                     return;
                 }
-
-                // If it's a valid 7-character hex code, update the UI
                 if (hex.length() == 7 && hex.startsWith("#")) {
                     try {
                         int color = Color.parseColor(hex);
                         colorPreview.setBackgroundColor(color);
                         colorPickerWheel.setColorFromHex(color);
-                    } catch (IllegalArgumentException e) {
-                        // Ignore incomplete or invalid hex codes while typing
-                    }
+                    } catch (IllegalArgumentException e) {}
                 }
             }
         });
 
-        // Handle Insert Button
         btnInsertColor.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -307,7 +300,6 @@ public class EditorActivity extends Activity {
             }
         });
 
-        // Handle file clicks in the tree
         treeList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -367,7 +359,6 @@ public class EditorActivity extends Activity {
             }
         });
 
-        // Configure WebView before loading the editor page.
         codeEditorWebView.getSettings().setJavaScriptEnabled(true);
         codeEditorWebView.getSettings().setDomStorageEnabled(true);
 
@@ -379,7 +370,6 @@ public class EditorActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
 
-                // Confirm that Ace and setCode() are initialized.
                 view.evaluateJavascript(
                         "typeof setCode === 'function' && window.editorReady === true",
                         new android.webkit.ValueCallback<String>() {
@@ -401,6 +391,17 @@ public class EditorActivity extends Activity {
                                         sendCodeToEditor(pendingCode, pendingExtension);
                                         pendingCode = null;
                                     }
+                                    
+                                    // --- NEW: Jump to line if requested ---
+                                    if (pendingJumpToLine > 0) {
+                                        final int lineToJump = pendingJumpToLine;
+                                        codeEditorWebView.postDelayed(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                goToLine(lineToJump);
+                                            }
+                                        }, 500); // Give Ace a tiny delay to finish rendering
+                                    }
                                 }
                             }
                         }
@@ -408,30 +409,26 @@ public class EditorActivity extends Activity {
             }
         });
 
-        codeEditorWebView.loadUrl(
-                "file:///android_asset/www/editor.html");
+        codeEditorWebView.loadUrl("file:///android_asset/www/editor.html");
 
         String filePath = getIntent().getStringExtra("file_path");
 
-        // If no file path was passed (e.g., opened via Workspace), find the most recent file
         if (filePath == null || filePath.isEmpty()) {
             SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
             String recentStr = prefs.getString("recent_files", "");
             
             if (!recentStr.isEmpty()) {
                 String[] paths = recentStr.split("\n");
-                // Loop through recent files and find the first one that still exists
                 for (String path : paths) {
                     File f = new File(path);
                     if (f.exists() && f.isFile()) {
                         filePath = path;
-                        break; // Stop once we find the most recent valid file
+                        break;
                     }
                 }
             }
         }
 
-        // Load the file if we found one (either from Intent or SharedPreferences)
         if (filePath != null && !filePath.isEmpty()) {
             loadFile(new File(filePath));
         }
@@ -440,37 +437,27 @@ public class EditorActivity extends Activity {
 
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                finish();
-            }
+            public void onClick(View v) { finish(); }
         });
 
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                saveCurrentFile();
-            }
+            public void onClick(View v) { saveCurrentFile(); }
         });
 
         btnFind.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                runEditorCommand("find();");
-            }
+            public void onClick(View v) { runEditorCommand("find();"); }
         });
 
         btnUndo.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                runEditorCommand("undo();");
-            }
+            public void onClick(View v) { runEditorCommand("undo();"); }
         });
 
         btnRedo.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                runEditorCommand("redo();");
-            }
+            public void onClick(View v) { runEditorCommand("redo();"); }
         });
 
         btnRun.setOnClickListener(new View.OnClickListener() {
@@ -516,7 +503,6 @@ public class EditorActivity extends Activity {
                     return;
                 }
 
-                // Get the code from WebView and start the preview
                 codeEditorWebView.evaluateJavascript("getCode();", new android.webkit.ValueCallback<String>() {
                     @Override
                     public void onReceiveValue(String result) {
@@ -525,15 +511,12 @@ public class EditorActivity extends Activity {
                                 throw new Exception("Editor returned no content.");
                             }
 
-                            // Decode the JSON string
                             String cleanCode = new JSONArray("[" + result + "]").getString(0);
                             
-                            // Launch the new Activity
                             android.content.Intent intent = new android.content.Intent(EditorActivity.this, WebBrowserActivity.class);
                             intent.putExtra("code", cleanCode);
                             intent.putExtra("file_name", currentFile.getName());
 
-                            // Pass the directory so the WebView knows where to find local files
                             String parentDir = currentFile.getParent();
                             intent.putExtra("base_url", "file://" + parentDir + "/");
 
@@ -555,44 +538,30 @@ public class EditorActivity extends Activity {
         });
     }
 
-    // JavaScript bridge
     public class WebAppInterface {
 
         @JavascriptInterface
-        public void saveRequested(String content) {
-            // Reserved for future auto-save functionality.
-        }
+        public void saveRequested(String content) {}
 
         @JavascriptInterface
         public void copyText(String text) {
-            ClipboardManager clipboard =
-                (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-    
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
             if (clipboard != null) {
-                ClipData clip = ClipData.newPlainText(
-                    "DebugMate", text
-                );
+                ClipData clip = ClipData.newPlainText("DebugMate", text);
                 clipboard.setPrimaryClip(clip);
             }
         }
     
         @JavascriptInterface
         public String getClipboardText() {
-            ClipboardManager clipboard =
-                (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-    
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
             if (clipboard != null && clipboard.hasPrimaryClip()) {
                 ClipData clip = clipboard.getPrimaryClip();
-    
                 if (clip != null && clip.getItemCount() > 0) {
                     CharSequence text = clip.getItemAt(0).getText();
-    
-                    if (text != null) {
-                        return text.toString();
-                    }
+                    if (text != null) return text.toString();
                 }
             }
-    
             return "";
         }
         
@@ -611,7 +580,6 @@ public class EditorActivity extends Activity {
     
     private void loadTree(File dir) {
         if (dir == null) return;
-    
         treeCurrentDir = dir;
         treeRootName.setText(dir.getName());
         treeFiles.clear();
@@ -635,9 +603,7 @@ public class EditorActivity extends Activity {
         treeList.setAdapter(treeAdapter);
     }
 
-    private void setupBottomIcon(
-            TextView view, String unicode, Typeface font) {
-
+    private void setupBottomIcon(TextView view, String unicode, Typeface font) {
         view.setTypeface(font);
         view.setText(unicode);
     }
@@ -690,11 +656,8 @@ public class EditorActivity extends Activity {
         try {
             StringBuilder text = new StringBuilder();
 
-            try (BufferedReader br = new BufferedReader(
-                    new FileReader(file))) {
-
+            try (BufferedReader br = new BufferedReader(new FileReader(file))) {
                 String line;
-
                 while ((line = br.readLine()) != null) {
                     text.append(line).append('\n');
                 }
@@ -705,8 +668,7 @@ public class EditorActivity extends Activity {
             int dotIndex = name.lastIndexOf('.');
 
             if (dotIndex != -1 && dotIndex < name.length() - 1) {
-                ext = name.substring(dotIndex + 1).toLowerCase(
-                        java.util.Locale.ROOT);
+                ext = name.substring(dotIndex + 1).toLowerCase(java.util.Locale.ROOT);
             }
 
             pendingCode = text.toString();
@@ -717,11 +679,9 @@ public class EditorActivity extends Activity {
                 pendingCode = null;
             }
             
-            // Update the tree if it's currently open
             if (treeCurrentDir == null || !file.getParentFile().getAbsolutePath().equals(treeCurrentDir.getAbsolutePath())) {
                 loadTree(file.getParentFile());
             } else {
-                // Just refresh the adapter to highlight the new file
                 if (treeAdapter != null) {
                     treeAdapter.notifyDataSetChanged();
                 }
@@ -747,20 +707,14 @@ public class EditorActivity extends Activity {
                     AppToast.showError(EditorActivity.this, "Folder name cannot be empty.");
                     return;
                 }
-                
-                // Ensure we have a valid directory to create it in
                 if (treeCurrentDir == null) {
                     AppToast.showInfo(EditorActivity.this, "No directory open.");
                     return;
                 }
-                
                 File newFolder = new File(treeCurrentDir, folderName);
                 if (newFolder.mkdir()) {
                     AppToast.showSuccess(EditorActivity.this, "Created: " + folderName);
-                    
-                    // --- FIXED: Just refresh the current tree ---
                     loadTree(treeCurrentDir);
-                    
                 } else {
                     AppToast.showError(EditorActivity.this, "Folder already exists!");
                 }
@@ -785,21 +739,15 @@ public class EditorActivity extends Activity {
                     AppToast.showError(EditorActivity.this, "File name cannot be empty.");
                     return;
                 }
-                
-                // Ensure we have a valid directory to create it in
                 if (treeCurrentDir == null) {
                     AppToast.showError(EditorActivity.this, "No directory open.");
                     return;
                 }
-                
                 File newFile = new File(treeCurrentDir, fileName);
                 try {
                     if (newFile.createNewFile()) {
                         AppToast.showSuccess(EditorActivity.this, "Created: " + fileName);
-                        
-                        // --- FIXED: Just refresh the current tree ---
                         loadTree(treeCurrentDir);
-                        
                     } else {
                         AppToast.showError(EditorActivity.this, "File already exists!");
                     }
@@ -832,30 +780,19 @@ public class EditorActivity extends Activity {
                     public void onReceiveValue(String result) {
                         try {
                             if (result == null || "null".equals(result)) {
-                                throw new Exception(
-                                        "Editor returned no content.");
+                                throw new Exception("Editor returned no content.");
                             }
 
-                            // Decode the JSON string returned by WebView.
-                            String cleanCode = new JSONArray(
-                                    "[" + result + "]"
-                            ).getString(0);
+                            String cleanCode = new JSONArray("[" + result + "]").getString(0);
 
-                            try (FileWriter writer =
-                                    new FileWriter(fileToSave, false)) {
+                            try (FileWriter writer = new FileWriter(fileToSave, false)) {
                                 writer.write(cleanCode);
                             }
 
-                            AppToast.showSuccess(
-                                    EditorActivity.this,
-                                    "Saved successfully! ✔️"
-                            );
+                            AppToast.showSuccess(EditorActivity.this, "Saved successfully! ✔️");
 
                         } catch (Exception e) {
-                            AppToast.showError(
-                                    EditorActivity.this,
-                                    "Error saving: " + e.getMessage()
-                            );
+                            AppToast.showError(EditorActivity.this, "Error saving: " + e.getMessage());
                         }
                     }
                 }
@@ -864,33 +801,23 @@ public class EditorActivity extends Activity {
 
     private void buildTabs() {
         tabContainer.removeAllViews();
-
-        SharedPreferences prefs = getSharedPreferences(
-                "DebugMatePrefs", MODE_PRIVATE);
-
+        SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
         String recentStr = prefs.getString("recent_files", "");
 
-        if (recentStr.isEmpty()) {
-            return;
-        }
+        if (recentStr.isEmpty()) return;
 
         String[] paths = recentStr.split("\n");
 
         for (final String path : paths) {
             final File f = new File(path);
-
-            if (!f.exists() || !f.isFile()) {
-                continue;
-            }
+            if (!f.exists() || !f.isFile()) continue;
 
             LinearLayout tabLayout = new LinearLayout(this);
             tabLayout.setOrientation(LinearLayout.HORIZONTAL);
             tabLayout.setGravity(Gravity.CENTER_VERTICAL);
             tabLayout.setPadding(24, 0, 9, 0);
 
-            if (currentFile != null
-                    && currentFile.getAbsolutePath().equals(
-                            f.getAbsolutePath())) {
+            if (currentFile != null && currentFile.getAbsolutePath().equals(f.getAbsolutePath())) {
                 tabLayout.setBackgroundResource(R.drawable.tab_active);
             }
 
@@ -930,11 +857,8 @@ public class EditorActivity extends Activity {
     }
 
     private void closeTab(String path) {
-        SharedPreferences prefs = getSharedPreferences(
-                "DebugMatePrefs", MODE_PRIVATE);
-
+        SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
         String recentStr = prefs.getString("recent_files", "");
-
         ArrayList<String> list = new ArrayList<>();
 
         for (String s : recentStr.split("\n")) {
@@ -944,18 +868,13 @@ public class EditorActivity extends Activity {
         }
 
         StringBuilder sb = new StringBuilder();
-
         for (String s : list) {
             sb.append(s).append("\n");
         }
 
-        prefs.edit()
-                .putString("recent_files", sb.toString().trim())
-                .apply();
+        prefs.edit().putString("recent_files", sb.toString().trim()).apply();
 
-        if (currentFile != null
-                && currentFile.getAbsolutePath().equals(path)) {
-
+        if (currentFile != null && currentFile.getAbsolutePath().equals(path)) {
             if (list.isEmpty()) {
                 finish();
                 return;
@@ -963,21 +882,17 @@ public class EditorActivity extends Activity {
                 loadFile(new File(list.get(0)));
             }
         }
-
         buildTabs();
     }
     
     @Override
     protected void onResume() {
         super.onResume();
-    
-        // Reload preferences when returning from Settings
         SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
         int newSize = prefs.getInt("editor_font_size", 14);
         boolean wrap = prefs.getBoolean("editor_word_wrap", false);
         boolean lines = prefs.getBoolean("editor_line_numbers", true);
 
-        // Update font size if it changed
         if (newSize != currentEditorFontSize) {
             currentEditorFontSize = newSize;
             if (currentFontSize != null) {
@@ -986,7 +901,6 @@ public class EditorActivity extends Activity {
             updateEditorFontSize();
         }
     
-        // Update Word Wrap and Line Numbers
         if (editorReady) {
             codeEditorWebView.evaluateJavascript("setWordWrap(" + wrap + ");", null);
             codeEditorWebView.evaluateJavascript("setShowLineNumbers(" + lines + ");", null);
