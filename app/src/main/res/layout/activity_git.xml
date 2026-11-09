@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#1E1E1E">
+
+    <!-- Top Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:background="#8B5CF6"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/btn_git_back"
+            android:layout_width="55dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="←"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Git Manager"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+            
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#DDDDDD" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/git_status_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ready."
+                android:textColor="#3FB950"
+                android:textSize="14sp"
+                android:fontFamily="monospace"
+                android:layout_marginBottom="16dp"/>
+
+            <Button
+                android:id="@+id/btn_git_init"
+                style="@style/GitButtonStyle"
+                android:text="Initialize Repository"
+                android:backgroundTint="#8B5CF6" />
+
+            <EditText
+                android:id="@+id/git_commit_message"
+                style="@style/GitEditTextStyle"
+                android:hint="Commit message..." />
+            
+            <Button
+                android:id="@+id/btn_git_commit"
+                style="@style/GitButtonStyle"
+                android:text="Commit Changes"
+                android:backgroundTint="#3FB950"
+                android:layout_marginBottom="24dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#333333"
+                android:layout_marginBottom="16dp"/>
+
+            <EditText
+                android:id="@+id/git_remote_url"
+                style="@style/GitEditTextStyle"
+                android:hint="Remote URL (https://github.com/...)" />
+
+            <EditText
+                android:id="@+id/git_username"
+                style="@style/GitEditTextStyle"
+                android:hint="GitHub Username" />
+
+            <EditText
+                android:id="@+id/git_token"
+                style="@style/GitEditTextStyle"
+                android:hint="Personal Access Token"
+                android:inputType="textPassword" />
+
+            <Button
+                android:id="@+id/btn_git_push"
+                style="@style/GitButtonStyle"
+                android:text="Push to Remote"
+                android:backgroundTint="#58A6FF" />
+
+        </LinearLayout>
+        
+    </ScrollView>
+    
+</LinearLayout>

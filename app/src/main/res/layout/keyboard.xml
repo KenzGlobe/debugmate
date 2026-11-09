@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#000000">
+
+    <com.kenzglobe.debugmate.CustomKeyboardView
+        android:id="@+id/keyboard_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#000000"
+        android:gravity="center"
+        android:keyBackground="@drawable/key_bg"
+        android:keyTextColor="#FFFFFF"
+        android:keyTextSize="18sp"
+        android:paddingVertical="5dp"
+        android:paddingHorizontal="3dp" />
+
+</LinearLayout>

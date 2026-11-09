@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#262626">
+
+    <!-- Top Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:orientation="horizontal"
+        android:background="#8B5CF6"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/btn_editor_settings_back"
+            android:layout_width="55dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp" />
+
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:text="Editor Settings"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp" />
+            
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#DDDDDD" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Section: Appearance -->
+            <com.kenzglobe.debugmate.AppBoldTextView
+                style="@style/SettingTitle"
+                android:text="Appearance" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/settings_section_bg"
+                android:elevation="6dp"
+                android:paddingHorizontal="12dp">
+                
+                <!-- Font Size -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="10dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        
+                        <com.kenzglobe.debugmate.AppBoldTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Default Font Size"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+                        
+                        <com.kenzglobe.debugmate.AppTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Text size for the code editor"
+                            android:textColor="#888888"
+                            android:textSize="12sp" />
+                            
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        
+                        <TextView
+                            android:id="@+id/editor_btn_size_minus"
+                            android:layout_width="35dp"
+                            android:layout_height="35dp"
+                            android:gravity="center"
+                            android:background="@drawable/fab_bg"
+                            android:textColor="#FFFFFF"
+                            android:textSize="18sp" />
+                            
+                        <com.kenzglobe.debugmate.AppBoldTextView
+                            android:id="@+id/editor_current_size"
+                            android:layout_width="40dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="14px"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp" />
+                            
+                        <TextView
+                            android:id="@+id/editor_btn_size_plus"
+                            android:layout_width="35dp"
+                            android:layout_height="35dp"
+                            android:gravity="center"
+                            android:background="@drawable/fab_bg"
+                            android:textColor="#FFFFFF"
+                            android:textSize="18sp" />
+                            
+                    </LinearLayout>
+                    
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#333333" />
+
+                <!-- Word Wrap -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="10dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        
+                        <com.kenzglobe.debugmate.AppBoldTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Word Wrap"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+                        
+                        <com.kenzglobe.debugmate.AppTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Wrap long lines instead of scrolling"
+                            android:textColor="#888888"
+                            android:textSize="12sp" />
+                            
+                    </LinearLayout>
+                    
+                    <Switch
+                        android:id="@+id/switch_word_wrap"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:trackTint="@color/switch_track_tint"
+                        android:thumbTint="@color/switch_thumb_tint" />
+                    
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#333333" />
+
+                <!-- Line Numbers -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="10dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        
+                        <com.kenzglobe.debugmate.AppBoldTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Show Line Numbers"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+                        
+                        <com.kenzglobe.debugmate.AppTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Display line numbers on the left"
+                            android:textColor="#888888"
+                            android:textSize="12sp" />
+                            
+                    </LinearLayout>
+                    
+                    <Switch
+                        android:id="@+id/switch_line_numbers"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:trackTint="@color/switch_track_tint"
+                        android:thumbTint="@color/switch_thumb_tint" />
+                    
+                </LinearLayout>
+                
+            </LinearLayout>
+
+        </LinearLayout>
+        
+    </ScrollView>
+    
+</LinearLayout>
