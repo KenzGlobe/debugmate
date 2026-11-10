@@ -11,11 +11,7 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Environment;
 import android.net.Uri;
-import android.widget.ListView;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.LinearLayout;
-import android.widget.FrameLayout;
+import android.widget.*;
 import android.view.View;
 import android.view.Gravity;
 import android.view.View.OnClickListener;
@@ -396,6 +392,25 @@ public class MainActivity extends Activity {
                 public void onClick(View v) {
                     startUpLayout.setVisibility(View.GONE);
                     startActivity(new Intent(MainActivity.this, TemplateGalleryActivity.class));
+                }
+            });
+        }
+        
+        if (cloneFromGitBtn != null) {
+            cloneFromGitBtn.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (drawerLayout.isDrawerOpen(Gravity.LEFT)) {
+                        drawerLayout.closeDrawer(Gravity.LEFT);
+                        return;
+                    }
+                    
+                    if (currentDirectory == null) {
+                        AppToast.showSuccess(MainActivity.this, "Load a folder first!");
+                        return;
+                    }
+                    startUpLayout.setVisibility(View.GONE); // Hide the popup menu
+                    showCloneDialog();
                 }
             });
         }
@@ -1034,71 +1049,93 @@ public class MainActivity extends Activity {
         }
     }
     
-    private void showGitDialog() {
-        if (currentDirectory == null) {
-            AppToast.showSuccess(MainActivity.this, "Open a project folder first!");
-            return;
+    private void showCloneDialog() {
+        final android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_clone_git);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Git Actions for " + currentDirectory.getName());
-    
-        // Simple test menu
-        builder.setItems(new String[]{"Init Repo", "Commit Changes", "Push to GitHub"}, new DialogInterface.OnClickListener() {
+        final EditText inputUrl = dialog.findViewById(R.id.clone_url);
+        final EditText inputUser = dialog.findViewById(R.id.clone_username);
+        final EditText inputToken = dialog.findViewById(R.id.clone_token);
+        Button btnCancel = dialog.findViewById(R.id.btn_clone_cancel);
+        Button btnClone = dialog.findViewById(R.id.btn_clone_start);
+        TextView btnInfo = dialog.findViewById(R.id.btn_clone_info);
+
+        // Setup Info Icon
+        Typeface solidFont = Typeface.createFromAsset(getAssets(), "fonts/fa-solid-900-v5.ttf");
+        btnInfo.setTypeface(solidFont);
+        btnInfo.setText("\uf05a"); // Info circle icon
+
+        btnInfo.setOnClickListener(new OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-                if (which == 0) {
-                    String result = GitManager.initRepo(currentDirectory);
-                    AppToast.showSuccess(MainActivity.this, result);
-                } else if (which == 1) {
-                    String result = GitManager.commitAll(currentDirectory, "Auto-commit from DebugMate");
-                    AppToast.showSuccess(MainActivity.this, result);
-                } else if (which == 2) {
-                    showPushDialog();
+            public void onClick(View v) {
+                String limitations = 
+                    "1. SSH URLs are not supported. Please use HTTPS.\n\n" +
+                    "2. Git LFS (Large File Storage) files will only download as text pointers.\n\n" +
+                    "3. Submodules will not be downloaded automatically.\n\n" +
+                    "4. Very large repositories may fail due to device memory limits.";
+                    
+                AppDialog.show(MainActivity.this, "Clone Limitations", limitations, "GOT IT", "", null, null);
+            }
+        });
+
+        btnCancel.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        btnClone.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final String url = inputUrl.getText().toString().trim();
+                final String user = inputUser.getText().toString().trim();
+                final String token = inputToken.getText().toString().trim();
+                
+                if (url.isEmpty()) {
+                    AppToast.showError(MainActivity.this, "Repository URL is required.");
+                    return;
                 }
+
+                dialog.dismiss();
+                
+                final File targetDir = currentDirectory != null ? currentDirectory : Environment.getExternalStorageDirectory();
+                String repoName = url.substring(url.lastIndexOf("/") + 1).replace(".git", "");
+                final File destination = new File(targetDir, repoName);
+
+                if (destination.exists()) {
+                    AppToast.showError(MainActivity.this, "Folder '" + repoName + "' already exists!");
+                    return;
+                }
+
+                AppToast.showInfo(MainActivity.this, "Cloning '" + repoName + "'... Please wait.");
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        final String result = GitManager.cloneRepo(url, destination.getAbsolutePath(), user, token);
+                        
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (result.startsWith("Success")) {
+                                    AppToast.showSuccess(MainActivity.this, "Cloned successfully!");
+                                    loadDirectory(targetDir);
+                                } else {
+                                    AppToast.showError(MainActivity.this, result);
+                                }
+                            }
+                        });
+                    }
+                }).start();
             }
         });
-        builder.show();
-    }
-    
-    private void showPushDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Push to GitHub");
 
-        // Create a vertical layout for inputs
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(40, 20, 40, 20);
-
-        final EditText inputUrl = new EditText(this);
-        inputUrl.setHint("Remote URL (https://github.com/user/repo.git)");
-        layout.addView(inputUrl);
-
-        final EditText inputUser = new EditText(this);
-        inputUser.setHint("GitHub Username");
-        layout.addView(inputUser);
-
-        final EditText inputToken = new EditText(this);
-        inputToken.setHint("Personal Access Token");
-        layout.addView(inputToken);
-
-        builder.setView(layout);
-
-        builder.setPositiveButton("Push", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String url = inputUrl.getText().toString().trim();
-                String user = inputUser.getText().toString().trim();
-                String token = inputToken.getText().toString().trim();
-                
-                AppToast.showSuccess(MainActivity.this, "Pushing... (Check logcat if it hangs)");
-                
-                String result = GitManager.pushToRemote(currentDirectory, url, user, token);
-                AppToast.showSuccess(MainActivity.this, result);
-            }
-        });
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
+        dialog.show();
     }
     
     private void setupIcon(TextView textView, String unicode, Typeface font) {

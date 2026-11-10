@@ -26,7 +26,7 @@ public class GitActivity extends Activity {
         }
         if (getActionBar() != null) getActionBar().hide();
 
-        statusText = findViewById(R.id.git_status_text);
+        /*statusText = findViewById(R.id.git_status_text);
         commitMessageInput = findViewById(R.id.git_commit_message);
         remoteUrlInput = findViewById(R.id.git_remote_url);
         usernameInput = findViewById(R.id.git_username);
@@ -101,15 +101,15 @@ public class GitActivity extends Activity {
                     }
                 }).start();
             }
-        });
+        });*/
     }
 
-    private void updateStatus(String message) {
+    /*private void updateStatus(String message) {
         statusText.setText(message);
         if (message.startsWith("Success")) {
             statusText.setTextColor(Color.parseColor("#3FB950")); // Green
         } else {
             statusText.setTextColor(Color.parseColor("#F85149")); // Red
         }
-    }
+    } */
 }

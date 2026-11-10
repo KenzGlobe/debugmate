@@ -1,56 +1,46 @@
 package com.kenzglobe.debugmate;
 
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-
 import java.io.File;
 
 public class GitManager {
-    
-    // 1. Initialize a new Git repository
-    public static String initRepo(File projectDir) {
-        try {
-            Git.init().setDirectory(projectDir).call().close();
-            return "Success: Git repository initialized.";
-        } catch (GitAPIException e) {
-            return "Error: " + e.getMessage();
-        }
-    }
 
-    // 2. Add all files and commit locally
-    public static String commitAll(File projectDir, String message) {
+    public static String cloneRepo(String remoteUrl, String destinationPath, String username, String token) {
         try {
-            Git git = Git.open(projectDir);
-            // Add all files (equivalent to git add .)
-            git.add().addFilepattern(".").call();
-            // Also add deleted files (equivalent to git add -u)
-            git.add().addFilepattern(".").setUpdate(true).call();
-            
-            // Commit
-            git.commit().setMessage(message).call();
-            git.close();
-            return "Success: Committed changes locally.";
-        } catch (Exception e) {
-            return "Error: " + e.getMessage();
-        }
-    }
+            if (!remoteUrl.endsWith(".git")) {
+                remoteUrl += ".git";
+            }
 
-    // 3. Push to GitHub (Requires a Personal Access Token, not a password)
-    public static String pushToRemote(File projectDir, String remoteUrl, String username, String token) {
-        try {
-            Git git = Git.open(projectDir);
-            
-            // Push to the remote branch
-            git.push()
-               .setRemote(remoteUrl)
+            Git.cloneRepository()
+               .setURI(remoteUrl)
+               .setDirectory(new File(destinationPath))
                .setCredentialsProvider(new UsernamePasswordCredentialsProvider(username, token))
                .call();
+               
+            return "Success: Repository cloned successfully!";
             
-            git.close();
-            return "Success: Pushed to GitHub!";
         } catch (Exception e) {
-            return "Error: " + e.getMessage();
+            // Catch the generic exception to keep the AIDE compiler happy
+            // Then check the type of exception using instanceof
+            
+            if (e instanceof org.eclipse.jgit.errors.TransportException) {
+                String msg = e.getMessage();
+                if (msg != null && msg.contains("git-upload-pack")) {
+                    return "Error: Network failed or Repo not found. Check your internet and URL.";
+                } else if (msg != null && msg.contains("not authorized")) {
+                    return "Error: Authentication failed. Check Username and PAT.";
+                }
+                return "Error: Connection failed. Please check your internet.";
+                
+            } else if (e instanceof java.net.UnknownHostException) {
+                return "Error: No internet connection. Please turn on your data or Wi-Fi.";
+                
+            } else {
+                // Catch any other unexpected errors
+                String errMsg = e.getMessage();
+                return "Error: " + (errMsg != null ? errMsg : "Unknown error occurred.");
+            }
         }
     }
 }

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="350dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_custom_popup"
+    android:orientation="vertical">
+
+    <!-- Header Row -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp">
+        
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:text="Clone Repository"
+            android:textColor="#8B5CF6"
+            android:textSize="14sp" />
+            
+        <TextView
+            android:id="@+id/btn_clone_info"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:gravity="center"
+            android:textColor="#888888"
+            android:textSize="16sp" />
+            
+    </RelativeLayout>
+    
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#8B5CF6" />
+
+    <com.kenzglobe.debugmate.AppEditText
+        android:id="@+id/clone_url"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginHorizontal="5dp"
+        android:paddingLeft="8dp"
+        android:hint="Repo URL (https://github.com/user/repo)"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#888888"
+        android:textCursorDrawable="@drawable/cursor_white"
+        android:inputType="textUri"
+        android:background="@drawable/edittext_bg" />
+
+    <com.kenzglobe.debugmate.AppEditText
+        android:id="@+id/clone_username"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginHorizontal="5dp"
+        android:paddingLeft="8dp"
+        android:hint="GitHub Username"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#888888"
+        android:textCursorDrawable="@drawable/cursor_white"
+        android:inputType="text"
+        android:background="@drawable/edittext_bg" />
+
+    <com.kenzglobe.debugmate.AppEditText
+        android:id="@+id/clone_token"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginHorizontal="5dp"
+        android:paddingLeft="8dp"
+        android:hint="Personal Access Token (PAT)"
+        android:inputType="textPassword"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#888888"
+        android:textCursorDrawable="@drawable/cursor_white"
+        android:background="@drawable/edittext_bg" />
+    
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#8B5CF6" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+        
+        <Button
+            android:id="@+id/btn_clone_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_gravity="center_vertical"
+            android:background="?android:attr/selectableItemBackground"
+            android:text="CANCEL"
+            android:textSize="14sp"
+            android:textColor="#888888" />
+        
+        <Button
+            android:id="@+id/btn_clone_start"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="12dp"
+            android:backgroundTint="#8B5CF6"
+            android:text="CLONE"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF" />
+        
+    </LinearLayout>
+
+</LinearLayout>
