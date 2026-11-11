@@ -241,16 +241,15 @@
     <!-- FILE TREE SIDEBAR                          -->
     <!-- ========================================== -->
     <LinearLayout
-        android:layout_width="280dp"
+        android:layout_width="300dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:background="#262626"
-        android:clipChildren="false"
-        android:clipToPadding="false"
         android:orientation="vertical">
 
         <!-- Sidebar Header -->
         <LinearLayout
+            android:id="@+id/sidebar_header"
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:background="#8B5CF6"
@@ -261,9 +260,12 @@
                 android:id="@+id/tree_up_btn"
                 android:layout_width="50dp"
                 android:layout_height="match_parent"
+                android:background="?android:attr/selectableItemBackground"
                 android:gravity="center"
                 android:textColor="#FFFFFF"
-                android:textSize="20sp" />
+                android:textSize="20sp"
+                android:clickable="true"
+                android:focusable="true" />
 
             <com.kenzglobe.debugmate.AppBoldTextView
                 android:id="@+id/tree_root_name"
@@ -271,65 +273,382 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center_vertical"
-                android:text="Project Files"
+                android:text="Explorer"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:singleLine="true"
                 android:ellipsize="end" />
+                
+            <View
+                android:layout_width="2dp"
+                android:layout_height="match_parent"
+                android:layout_marginVertical="10dp"
+                android:background="#DDDDDD" />
 
             <TextView
-                android:id="@+id/settings_btn"
-                android:layout_width="50dp"
+                android:id="@+id/drop_activity_bar_btn"
+                android:layout_width="40dp"
                 android:layout_height="match_parent"
+                android:background="?android:attr/selectableItemBackground"
                 android:gravity="center"
                 android:textColor="#FFFFFF"
                 android:textSize="20sp" />
                 
         </LinearLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#DDDDDD" />
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#DDDDDD" />
             
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:background="#262626"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:elevation="6dp">
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
-            <TextView
-                android:id="@+id/create_folder"
-                style="@style/fileTreeHeaderBtns" />
-
-            <TextView
-                android:id="@+id/create_file"
-                style="@style/fileTreeHeaderBtns" />
-
-            <TextView
-                android:id="@+id/palette"
-                style="@style/fileTreeHeaderBtns"
-                android:text="🎨" />
+            <!-- ========================================== -->
+            <!-- PANEL 1: THE MENU (Activity Bar)           -->
+            <!-- ========================================== -->
+            <LinearLayout
+                android:id="@+id/activity_bar_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#262626"
+                android:orientation="vertical">
                 
-        </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/nav_explorer"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true">
 
-        <!-- File List -->
-        <ListView
-            android:id="@+id/tree_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:divider="@null"
-            android:dividerHeight="0dp" />
+                    <TextView
+                        android:id="@+id/nav_explorer_ic"
+                        android:layout_width="50dp"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:textSize="18sp"
+                        android:textColor="#8B5CF6" />
 
+                    <com.kenzglobe.debugmate.AppTextView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="Explorer"
+                        android:textSize="15sp"
+                        android:textColor="#FFFFFF" />
+                        
+                </LinearLayout>
+                
+                <LinearLayout
+                    android:id="@+id/nav_search"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:id="@+id/nav_search_ic"
+                        android:layout_width="50dp"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:textSize="18sp"
+                        android:textColor="#8B5CF6" />
+
+                    <com.kenzglobe.debugmate.AppTextView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="Search"
+                        android:textSize="15sp"
+                        android:textColor="#FFFFFF" />
+                        
+                </LinearLayout>
+                
+                <LinearLayout
+                    android:id="@+id/nav_git"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:id="@+id/nav_git_ic"
+                        android:layout_width="50dp"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:textSize="18sp"
+                        android:textColor="#8B5CF6" />
+
+                    <com.kenzglobe.debugmate.AppTextView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="Source Control"
+                        android:textSize="15sp"
+                        android:textColor="#FFFFFF" />
+                        
+                </LinearLayout>
+                
+                <LinearLayout
+                    android:id="@+id/nav_run"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:id="@+id/nav_run_ic"
+                        android:layout_width="50dp"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:textSize="18sp"
+                        android:textColor="#8B5CF6" />
+
+                    <com.kenzglobe.debugmate.AppTextView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="Run and Debug"
+                        android:textSize="15sp"
+                        android:textColor="#FFFFFF" />
+                        
+                </LinearLayout>
+                
+                <LinearLayout
+                    android:id="@+id/nav_extensions"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:id="@+id/nav_extensions_ic"
+                        android:layout_width="50dp"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:textSize="18sp"
+                        android:textColor="#8B5CF6" />
+
+                    <com.kenzglobe.debugmate.AppTextView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="Extensions"
+                        android:textSize="15sp"
+                        android:textColor="#FFFFFF" />
+                        
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+                
+                <LinearLayout
+                    android:id="@+id/nav_accounts"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:id="@+id/nav_accounts_ic"
+                        android:layout_width="50dp"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:textSize="18sp"
+                        android:textColor="#8B5CF6" />
+
+                    <com.kenzglobe.debugmate.AppTextView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="Accounts"
+                        android:textSize="15sp"
+                        android:textColor="#FFFFFF" />
+                        
+                </LinearLayout>
+                    
+            </LinearLayout>
+
+            <!-- ========================================== -->
+            <!-- PANEL 2: THE FILE EXPLORER                 -->
+            <!-- ========================================== -->
+            <LinearLayout
+                android:id="@+id/panel_explorer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:background="#262626"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:elevation="6dp">
+
+                    <TextView
+                        android:id="@+id/settings_btn"
+                        style="@style/fileTreeHeaderBtns" />
+
+                    <TextView
+                        android:id="@+id/create_folder"
+                        style="@style/fileTreeHeaderBtns" />
+
+                    <TextView
+                        android:id="@+id/create_file"
+                        style="@style/fileTreeHeaderBtns" />
+
+                    <TextView
+                        android:id="@+id/palette"
+                        style="@style/fileTreeHeaderBtns"
+                        android:text="🎨" />
+                        
+                </LinearLayout>
+
+                <ListView
+                    android:id="@+id/tree_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:divider="@null"
+                    android:dividerHeight="0dp" />
+                    
+            </LinearLayout>
+
+            <!-- ========================================== -->
+            <!-- PANEL 3: SOURCE CONTROL (Git)              -->
+            <!-- ========================================== -->
+            <LinearLayout
+                android:id="@+id/panel_source_control"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Status Refresh Area -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="8dp">
+
+                    <Button
+                        android:id="@+id/btn_git_status"
+                        android:layout_width="match_parent"
+                        android:layout_height="35dp"
+                        android:backgroundTint="#262626"
+                        android:text="Refresh Status"
+                        android:textColor="#8B5CF6"
+                        android:textSize="12sp" />
+                    
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#333333" />
+
+                <!-- List of Changed Files -->
+                <ListView
+                    android:id="@+id/git_file_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:divider="@null"
+                    android:dividerHeight="0dp" />
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#333333" />
+
+                <!-- Commit Area -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="10dp">
+                    
+                    <com.kenzglobe.debugmate.AppEditText
+                        android:id="@+id/git_commit_message"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:background="@drawable/edittext_bg"
+                        android:gravity="top|start"
+                        android:hint="Message (Commit)"
+                        android:padding="8dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#888888"
+                        android:textSize="14sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btn_git_add"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:backgroundTint="#D29922"
+                            android:text="Add"
+                            android:textColor="#FFFFFF"
+                            android:textSize="12sp" />
+                            
+                        <Button
+                            android:id="@+id/btn_git_commit"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#3FB950"
+                            android:text="Commit"
+                            android:textColor="#FFFFFF"
+                            android:textSize="12sp" />
+
+                        <Button
+                            android:id="@+id/btn_git_push"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#58A6FF"
+                            android:text="Push"
+                            android:textColor="#FFFFFF"
+                            android:textSize="12sp" />
+                            
+                    </LinearLayout>
+                    
+                </LinearLayout>
+                
+            </LinearLayout>
+            
+        </FrameLayout>
+
+        <!-- BOTTOM PANEL (Keep your existing font size/goto line code here) -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#666666" />
             
         <LinearLayout
+            android:id="@+id/bottom_panel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#202020"
@@ -439,7 +758,7 @@
             </LinearLayout>
             
         </LinearLayout>
-            
+        
     </LinearLayout>
 
 </android.support.v4.widget.DrawerLayout>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:attr/selectableItemBackground"
+    android:orientation="horizontal"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="10dp"
+    android:gravity="center_vertical">
+
+    <!-- File Icon (e.g., Python, JS, Java, Folder) -->
+    <TextView
+        android:id="@+id/git_file_icon"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:gravity="center"
+        android:textSize="18sp" />
+
+    <!-- File Name & Path -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:orientation="vertical">
+
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:id="@+id/git_file_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#E6E6E6"
+            android:textSize="14sp"
+            android:singleLine="true"
+            android:ellipsize="middle" />
+
+        <com.kenzglobe.debugmate.AppTextView
+            android:id="@+id/git_file_path"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="#888888"
+            android:textSize="10sp"
+            android:singleLine="true"
+            android:ellipsize="start" />
+            
+    </LinearLayout>
+
+    <!-- Status Badge (M = Modified, A = Added, D = Deleted) -->
+    <TextView
+        android:id="@+id/git_file_status"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:fontFamily="monospace"
+        android:layout_marginStart="8dp" />
+
+</LinearLayout>

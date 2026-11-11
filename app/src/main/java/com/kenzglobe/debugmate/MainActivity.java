@@ -1113,7 +1113,11 @@ public class MainActivity extends Activity {
                 }
 
                 AppToast.showInfo(MainActivity.this, "Cloning '" + repoName + "'... Please wait.");
-
+                
+                // Save credentials for future pushes
+                SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                prefs.edit().putString("git_username", user).putString("git_token", token).apply();
+                
                 new Thread(new Runnable() {
                     @Override
                     public void run() {

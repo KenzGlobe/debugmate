@@ -43,8 +43,17 @@ public class EditorActivity extends Activity {
         createFile,
         palette,
         btnClosePalette,
-        currentFontSize;
-        
+        currentFontSize,
+        dropActivityBarBtn,
+        navExplorerIc,
+        navSearchIc,
+        navGitIc,
+        navRunIc,
+        navExtensionsIc,
+        navAccountsIc;
+
+    private LinearLayout sideBarHeader, activityBarLayout, panelExplorer, panelSourceControl, navExplorer, navSearch, navGit, navRun, navExtensions, navAccounts, bottomPanel;
+
     private File treeCurrentDir;
     private EditorTreeAdapter treeAdapter;
     private ArrayList<File> treeFiles = new ArrayList<>();
@@ -52,14 +61,20 @@ public class EditorActivity extends Activity {
     private String pendingCode = null;
     private String pendingExtension = "text";
     private int currentEditorFontSize;
-    private int pendingJumpToLine = -1; // NEW: Stores the line to jump to
+    private int pendingJumpToLine = -1;
 
-    private Typeface appFont, solidFont;
+    private Typeface appFont, solidFont, brandsRegularFont;
 
     private TextView fileNameView, fileNamePath, sideBarBtn,
             btnBack, btnSave, btnFind, btnUndo, btnRedo, btnRun;
 
     private LinearLayout tabContainer;
+    
+    private ListView gitFileList;
+    private Button btnGitStatus, btnGitAdd, btnGitCommit, btnGitPush;
+    private com.kenzglobe.debugmate.AppEditText gitCommitMessage;
+    private ArrayList<GitFileItem> changedFilesList = new ArrayList<>();
+    private GitAdapter gitFileAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,17 +90,14 @@ public class EditorActivity extends Activity {
             getActionBar().hide();
         }
         
-        // NEW: Retrieve the line to jump to (if any)
         pendingJumpToLine = getIntent().getIntExtra("jump_to_line", -1);
         
         SharedPreferences prefsFontSize = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
         currentEditorFontSize = prefsFontSize.getInt("editor_font_size", 14);
 
-        appFont = Typeface.createFromAsset(
-                getAssets(), "fonts/SpaceMono-Bold.ttf");
-
-        solidFont = Typeface.createFromAsset(
-                getAssets(), "fonts/fa-solid-900-v5.ttf");
+        appFont = Typeface.createFromAsset(getAssets(), "fonts/SpaceMono-Bold.ttf");
+        solidFont = Typeface.createFromAsset(getAssets(), "fonts/fa-solid-900-v5.ttf");
+        brandsRegularFont = Typeface.createFromAsset(getAssets(), "fonts/fa-brands-regular-400-v5.ttf");
 
         fileNameView = findViewById(R.id.editor_file_name);
         fileNamePath = findViewById(R.id.editor_file_path);
@@ -130,9 +142,55 @@ public class EditorActivity extends Activity {
         gotoLineInput = findViewById(R.id.goto_line_input);
         btnGoToLine = findViewById(R.id.btn_goto_line);
         
+        // --- NEW: Initialize Activity Bar Views ---
+        sideBarHeader = findViewById(R.id.sidebar_header);
+        dropActivityBarBtn = findViewById(R.id.drop_activity_bar_btn);
+        activityBarLayout = findViewById(R.id.activity_bar_layout);
+        panelExplorer = findViewById(R.id.panel_explorer);
+        panelSourceControl = findViewById(R.id.panel_source_control);
+        navExplorer = findViewById(R.id.nav_explorer);
+        navExplorerIc = findViewById(R.id.nav_explorer_ic);
+        navSearch = findViewById(R.id.nav_search);
+        navSearchIc = findViewById(R.id.nav_search_ic);
+        navGit = findViewById(R.id.nav_git);
+        navGitIc = findViewById(R.id.nav_git_ic);
+        navRun = findViewById(R.id.nav_run);
+        navRunIc = findViewById(R.id.nav_run_ic);
+        navExtensions = findViewById(R.id.nav_extensions);
+        navExtensionsIc = findViewById(R.id.nav_extensions_ic);
+        navAccounts = findViewById(R.id.nav_accounts);
+        navAccountsIc = findViewById(R.id.nav_accounts_ic);
+        bottomPanel = findViewById(R.id.bottom_panel);
+        
+        gitFileList = findViewById(R.id.git_file_list);
+        btnGitStatus = findViewById(R.id.btn_git_status);
+        btnGitAdd = findViewById(R.id.btn_git_add);
+        btnGitCommit = findViewById(R.id.btn_git_commit);
+        btnGitPush = findViewById(R.id.btn_git_push);
+        gitCommitMessage = findViewById(R.id.git_commit_message);
+        
+        gitFileAdapter = new GitAdapter(this, changedFilesList);
+        gitFileList.setAdapter(gitFileAdapter);
+
+        dropActivityBarBtn.setTypeface(solidFont);
+        dropActivityBarBtn.setText("\uf060"); // Back arrow icon
+        // -------------------------------------------
+
         treeRootName.setTypeface(appFont);
         treeUpBtn.setTypeface(solidFont);
         treeUpBtn.setText("\uf062");
+        navExplorerIc.setTypeface(solidFont);
+        navExplorerIc.setText("\uf07b");
+        navSearchIc.setTypeface(solidFont);
+        navSearchIc.setText("\uf002");
+        navGitIc.setTypeface(solidFont);
+        navGitIc.setText("\uf126");
+        navRunIc.setTypeface(solidFont);
+        navRunIc.setText("\uf04b");
+        navExtensionsIc.setTypeface(solidFont);
+        navExtensionsIc.setText("\uf12e");
+        navAccountsIc.setTypeface(solidFont);
+        navAccountsIc.setText("\uf007");
         settingsBtn.setTypeface(solidFont);
         settingsBtn.setText("\uf013");
         createFolder.setTypeface(solidFont);
@@ -147,10 +205,33 @@ public class EditorActivity extends Activity {
         gotoLineInput.setTypeface(appFont);
         gotoLineInput.setHint("1 - 0");
         
+        // --- NEW: Activity Bar Click Listeners ---
+        navExplorer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showPanel("explorer");
+            }
+        });
+
+        navGit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showPanel("git");
+            }
+        });
+
+        dropActivityBarBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showPanel("menu");
+            }
+        });
+        // ------------------------------------------
+
         reduceFontSize.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (currentEditorFontSize > 8) { // Minimum size limit
+                if (currentEditorFontSize > 8) {
                     currentEditorFontSize--;
                     currentFontSize.setText(currentEditorFontSize + "px");
                     updateEditorFontSize();
@@ -161,10 +242,23 @@ public class EditorActivity extends Activity {
         increaseFontSize.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (currentEditorFontSize < 32) { // Maximum size limit
+                if (currentEditorFontSize < 32) {
                     currentEditorFontSize++;
                     currentFontSize.setText(currentEditorFontSize + "px");
                     updateEditorFontSize();
+                }
+            }
+        });
+            
+        treeUpBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (treeUpBtn.getText().toString().equals("\uf062")) {
+                    if (treeCurrentDir != null && treeCurrentDir.getParentFile() != null) {
+                        loadTree(treeCurrentDir.getParentFile());
+                    }
+                } else {
+                    AppToast.showInfo(EditorActivity.this, "Not arrow icon!!");
                 }
             }
         });
@@ -178,8 +272,8 @@ public class EditorActivity extends Activity {
                         int line = Integer.parseInt(input);
                         if (line > 0) {
                             goToLine(line);
-                            gotoLineInput.setText(""); // Clear input after jump
-                            editorDrawer.closeDrawer(Gravity.LEFT); // Close sidebar
+                            gotoLineInput.setText(""); 
+                            editorDrawer.closeDrawer(Gravity.LEFT); 
                         } else {
                             AppToast.showInfo(EditorActivity.this, "Line must be greater than 0");
                         }
@@ -194,17 +288,8 @@ public class EditorActivity extends Activity {
         sideBarBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                showPanel("menu"); // Default to menu when opening drawer
                 editorDrawer.openDrawer(Gravity.LEFT);
-            }
-        });
-
-        // Navigate up the tree
-        treeUpBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (treeCurrentDir != null && treeCurrentDir.getParentFile() != null) {
-                    loadTree(treeCurrentDir.getParentFile());
-                }
             }
         });
         
@@ -245,7 +330,6 @@ public class EditorActivity extends Activity {
             }
         });
         
-        // Handle color changes from the wheel
         colorPickerWheel.setOnColorChangedListener(new ColorPickerView.OnColorChangedListener() {
             @Override
             public void onColorChanged(int color) {
@@ -353,59 +437,174 @@ public class EditorActivity extends Activity {
                         buildTabs();
                         editorDrawer.closeDrawer(Gravity.LEFT);
                     } else {
-                        Toast.makeText(EditorActivity.this, "Feature not available yet.", Toast.LENGTH_LONG).show();
+                        AppToast.showInfo(EditorActivity.this, "Feature not available yet.");
                     }
                 }
+            }
+        });
+        
+        // --- Git Panel Logic ---
+        btnGitStatus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (treeCurrentDir == null) return;
+                AppToast.showInfo(EditorActivity.this, "Checking status...");
+                
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        final ArrayList<GitFileItem> status = GitManager.getStatus(treeCurrentDir);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                changedFilesList.clear();
+                                changedFilesList.addAll(status);
+                                gitFileAdapter.notifyDataSetChanged();
+                                if (changedFilesList.isEmpty()) {
+                                    AppToast.showSuccess(EditorActivity.this, "Working tree clean!");
+                                }
+                            }
+                        });
+                    }
+                }).start();
+            }
+        });
+        
+        btnGitAdd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (treeCurrentDir == null) return;
+                AppToast.showInfo(EditorActivity.this, "Staging changes...");
+                
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        final String result = GitManager.stageAll(treeCurrentDir);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (result.startsWith("Success")) {
+                                    AppToast.showSuccess(EditorActivity.this, "Staged successfully!");
+                                    btnGitStatus.performClick(); // Refresh the list
+                                } else {
+                                    AppToast.showError(EditorActivity.this, result);
+                                }
+                            }
+                        });
+                    }
+                }).start();
+            }
+        });
+        
+        btnGitCommit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (treeCurrentDir == null) return;
+                final String msg = gitCommitMessage.getText().toString().trim();
+                if (msg.isEmpty()) {
+                    AppToast.showError(EditorActivity.this, "Enter a commit message!");
+                    return;
+                }
+                
+                AppToast.showInfo(EditorActivity.this, "Committing...");
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        final String result = GitManager.commit(treeCurrentDir, msg);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (result.startsWith("Success")) {
+                                    AppToast.showSuccess(EditorActivity.this, result);
+                                    gitCommitMessage.setText("");
+                                    btnGitStatus.performClick(); // Refresh list (should be empty now)
+                                } else {
+                                    AppToast.showError(EditorActivity.this, result);
+                                }
+                            }
+                        });
+                    }
+                }).start();
+            }
+        });
+        
+        btnGitPush.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (treeCurrentDir == null) return;
+                
+                // Get credentials from SharedPreferences (saved during Clone)
+                SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                final String user = prefs.getString("git_username", "");
+                final String token = prefs.getString("git_token", "");
+                
+                if (user.isEmpty() || token.isEmpty()) {
+                    AppToast.showError(EditorActivity.this, "No GitHub credentials found. Please clone a repo first.");
+                    return;
+                }
+                
+                AppToast.showInfo(EditorActivity.this, "Pushing to GitHub...");
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        final String result = GitManager.push(treeCurrentDir, user, token);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (result.startsWith("Success")) {
+                                    AppToast.showSuccess(EditorActivity.this, result);
+                                } else {
+                                    AppToast.showError(EditorActivity.this, result);
+                                }
+                            }
+                        });
+                    }
+                }).start();
             }
         });
 
         codeEditorWebView.getSettings().setJavaScriptEnabled(true);
         codeEditorWebView.getSettings().setDomStorageEnabled(true);
 
-        codeEditorWebView.addJavascriptInterface(
-                new WebAppInterface(), "AndroidBridge");
+        codeEditorWebView.addJavascriptInterface(new WebAppInterface(), "AndroidBridge");
 
         codeEditorWebView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
 
-                view.evaluateJavascript(
-                        "typeof setCode === 'function' && window.editorReady === true",
-                        new android.webkit.ValueCallback<String>() {
-                            @Override
-                            public void onReceiveValue(String result) {
-                                editorReady = "true".equals(result);
+                view.evaluateJavascript("typeof setCode === 'function' && window.editorReady === true", new android.webkit.ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String result) {
+                        editorReady = "true".equals(result);
 
-                                if (editorReady) {
-                                    SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
-                                    boolean wrap = prefs.getBoolean("editor_word_wrap", false);
-                                    boolean lines = prefs.getBoolean("editor_line_numbers", true);
-                                    
-                                    codeEditorWebView.evaluateJavascript("setWordWrap(" + wrap + ");", null);
-                                    codeEditorWebView.evaluateJavascript("setShowLineNumbers(" + lines + ");", null);
-                                    
-                                    updateEditorFontSize();
-                                    
-                                    if (pendingCode != null) {
-                                        sendCodeToEditor(pendingCode, pendingExtension);
-                                        pendingCode = null;
+                        if (editorReady) {
+                            SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                            boolean wrap = prefs.getBoolean("editor_word_wrap", false);
+                            boolean lines = prefs.getBoolean("editor_line_numbers", true);
+                            
+                            codeEditorWebView.evaluateJavascript("setWordWrap(" + wrap + ");", null);
+                            codeEditorWebView.evaluateJavascript("setShowLineNumbers(" + lines + ");", null);
+                            
+                            updateEditorFontSize();
+                            
+                            if (pendingCode != null) {
+                                sendCodeToEditor(pendingCode, pendingExtension);
+                                pendingCode = null;
+                            }
+                            
+                            if (pendingJumpToLine > 0) {
+                                final int lineToJump = pendingJumpToLine;
+                                codeEditorWebView.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        goToLine(lineToJump);
                                     }
-                                    
-                                    // --- NEW: Jump to line if requested ---
-                                    if (pendingJumpToLine > 0) {
-                                        final int lineToJump = pendingJumpToLine;
-                                        codeEditorWebView.postDelayed(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                goToLine(lineToJump);
-                                            }
-                                        }, 500); // Give Ace a tiny delay to finish rendering
-                                    }
-                                }
+                                }, 500);
                             }
                         }
-                );
+                    }
+                });
             }
         });
 
@@ -538,8 +737,36 @@ public class EditorActivity extends Activity {
         });
     }
 
-    public class WebAppInterface {
+    // Handles switching between Activity Bar menu and panels ---
+    private void showPanel(String panelName) {
+        // Hide everything first
+        activityBarLayout.setVisibility(View.GONE);
+        panelExplorer.setVisibility(View.GONE);
+        panelSourceControl.setVisibility(View.GONE);
+        
+        if (panelName.equals("menu")) {
+            sideBarHeader.setVisibility(View.GONE);
+            bottomPanel.setVisibility(View.GONE);
+            activityBarLayout.setVisibility(View.VISIBLE);
+            dropActivityBarBtn.setVisibility(View.GONE);
+        } else if (panelName.equals("explorer")) {
+            sideBarHeader.setVisibility(View.VISIBLE);
+            bottomPanel.setVisibility(View.VISIBLE);
+            treeRootName.setText(treeCurrentDir.getName());
+            treeUpBtn.setText("\uf062");
+            panelExplorer.setVisibility(View.VISIBLE);
+            dropActivityBarBtn.setVisibility(View.VISIBLE);
+        } else if (panelName.equals("git")) {
+            sideBarHeader.setVisibility(View.VISIBLE);
+            bottomPanel.setVisibility(View.GONE);
+            treeRootName.setText("Source Control");
+            treeUpBtn.setText("\uf126");
+            panelSourceControl.setVisibility(View.VISIBLE);
+            dropActivityBarBtn.setVisibility(View.VISIBLE);
+        }
+    }
 
+    public class WebAppInterface {
         @JavascriptInterface
         public void saveRequested(String content) {}
 
@@ -773,30 +1000,27 @@ public class EditorActivity extends Activity {
 
         final File fileToSave = currentFile;
 
-        codeEditorWebView.evaluateJavascript(
-                "getCode();",
-                new android.webkit.ValueCallback<String>() {
-                    @Override
-                    public void onReceiveValue(String result) {
-                        try {
-                            if (result == null || "null".equals(result)) {
-                                throw new Exception("Editor returned no content.");
-                            }
-
-                            String cleanCode = new JSONArray("[" + result + "]").getString(0);
-
-                            try (FileWriter writer = new FileWriter(fileToSave, false)) {
-                                writer.write(cleanCode);
-                            }
-
-                            AppToast.showSuccess(EditorActivity.this, "Saved successfully! ✔️");
-
-                        } catch (Exception e) {
-                            AppToast.showError(EditorActivity.this, "Error saving: " + e.getMessage());
-                        }
+        codeEditorWebView.evaluateJavascript("getCode();", new android.webkit.ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String result) {
+                try {
+                    if (result == null || "null".equals(result)) {
+                        throw new Exception("Editor returned no content.");
                     }
+
+                    String cleanCode = new JSONArray("[" + result + "]").getString(0);
+
+                    try (FileWriter writer = new FileWriter(fileToSave, false)) {
+                        writer.write(cleanCode);
+                    }
+
+                    AppToast.showSuccess(EditorActivity.this, "Saved successfully! ✔️");
+
+                } catch (Exception e) {
+                    AppToast.showError(EditorActivity.this, "Error saving: " + e.getMessage());
                 }
-        );
+            }
+        });
     }
 
     private void buildTabs() {
