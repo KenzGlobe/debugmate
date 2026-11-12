@@ -49,10 +49,9 @@ public class EditorActivity extends Activity {
         navSearchIc,
         navGitIc,
         navRunIc,
-        navExtensionsIc,
         navAccountsIc;
 
-    private LinearLayout sideBarHeader, activityBarLayout, panelExplorer, panelSourceControl, navExplorer, navSearch, navGit, navRun, navExtensions, navAccounts, bottomPanel;
+    private LinearLayout sideBarHeader, activityBarLayout, panelExplorer, panelSourceControl, navExplorer, navSearch, navGit, navRun, navAccounts, bottomPanel;
 
     private File treeCurrentDir;
     private EditorTreeAdapter treeAdapter;
@@ -75,6 +74,22 @@ public class EditorActivity extends Activity {
     private com.kenzglobe.debugmate.AppEditText gitCommitMessage;
     private ArrayList<GitFileItem> changedFilesList = new ArrayList<>();
     private GitAdapter gitFileAdapter;
+    
+    private LinearLayout panelSearch, navSearchLayout;
+    private com.kenzglobe.debugmate.AppEditText searchInput;
+    private TextView btnSearchAction;
+    private ListView searchResultsList;
+    private ArrayList<SearchResult> searchResults = new ArrayList<>();
+    private SearchAdapter searchAdapter;
+    
+    private LinearLayout panelRunAndDebug, cardRunActive, toolTerminal, toolPython, toolWeb;
+    private TextView iconRunActive, textRunActiveTitle, textRunActiveSub;
+    private TextView iconToolTerminal, iconToolPython, iconToolWeb;
+    
+    private LinearLayout panelAccounts;
+    private TextView accountStatusIcon, accountStatusText;
+    private com.kenzglobe.debugmate.AppEditText accountUsernameInput, accountTokenInput;
+    private Button btnSaveAccount, btnLogoutAccount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -156,8 +171,6 @@ public class EditorActivity extends Activity {
         navGitIc = findViewById(R.id.nav_git_ic);
         navRun = findViewById(R.id.nav_run);
         navRunIc = findViewById(R.id.nav_run_ic);
-        navExtensions = findViewById(R.id.nav_extensions);
-        navExtensionsIc = findViewById(R.id.nav_extensions_ic);
         navAccounts = findViewById(R.id.nav_accounts);
         navAccountsIc = findViewById(R.id.nav_accounts_ic);
         bottomPanel = findViewById(R.id.bottom_panel);
@@ -187,8 +200,6 @@ public class EditorActivity extends Activity {
         navGitIc.setText("\uf126");
         navRunIc.setTypeface(solidFont);
         navRunIc.setText("\uf04b");
-        navExtensionsIc.setTypeface(solidFont);
-        navExtensionsIc.setText("\uf12e");
         navAccountsIc.setTypeface(solidFont);
         navAccountsIc.setText("\uf007");
         settingsBtn.setTypeface(solidFont);
@@ -205,11 +216,191 @@ public class EditorActivity extends Activity {
         gotoLineInput.setTypeface(appFont);
         gotoLineInput.setHint("1 - 0");
         
+        panelSearch = findViewById(R.id.panel_search);
+        searchInput = findViewById(R.id.search_input);
+        btnSearchAction = findViewById(R.id.btn_search_action);
+        searchResultsList = findViewById(R.id.search_results_list);
+        
+        // Setup Search Icon
+        Typeface solidFontForSearch = Typeface.createFromAsset(getAssets(), "fonts/fa-solid-900-v5.ttf");
+        btnSearchAction.setTypeface(solidFontForSearch);
+        btnSearchAction.setText("\uf002");
+        
+        searchAdapter = new SearchAdapter(this, searchResults);
+        searchResultsList.setAdapter(searchAdapter);
+        
+        panelRunAndDebug = findViewById(R.id.panel_run_and_debug);
+        cardRunActive = findViewById(R.id.card_run_active);
+        iconRunActive = findViewById(R.id.icon_run_active);
+        textRunActiveTitle = findViewById(R.id.text_run_active_title);
+        textRunActiveSub = findViewById(R.id.text_run_active_sub);
+        
+        toolTerminal = findViewById(R.id.tool_terminal);
+        toolPython = findViewById(R.id.tool_python);
+        toolWeb = findViewById(R.id.tool_web);
+        
+        iconToolTerminal = findViewById(R.id.icon_tool_terminal);
+        iconToolPython = findViewById(R.id.icon_tool_python);
+        iconToolWeb = findViewById(R.id.icon_tool_web);
+        
+        // Setup Icons for Run Panel
+        Typeface solidFontRun = Typeface.createFromAsset(getAssets(), "fonts/fa-solid-900-v5.ttf");
+        iconRunActive.setTypeface(solidFontRun);
+        iconRunActive.setText("\uf04b"); // Play icon
+        
+        iconToolTerminal.setTypeface(solidFontRun);
+        iconToolTerminal.setText("\uf120"); // Terminal icon
+        
+        iconToolPython.setTypeface(solidFontRun);
+        iconToolPython.setText("\uf3e2"); // Python icon (using FA brands)
+        iconToolPython.setTypeface(brandsRegularFont); // Switch to brands for python
+        
+        iconToolWeb.setTypeface(solidFontRun);
+        iconToolWeb.setText("\uf0ac"); // Globe icon
+        
+        panelAccounts = findViewById(R.id.panel_accounts);
+        accountStatusIcon = findViewById(R.id.account_status_icon);
+        accountStatusText = findViewById(R.id.account_status_text);
+        accountUsernameInput = findViewById(R.id.account_username_input);
+        accountTokenInput = findViewById(R.id.account_token_input);
+        btnSaveAccount = findViewById(R.id.btn_save_account);
+        btnLogoutAccount = findViewById(R.id.btn_logout_account);
+        
+        // Set account icon
+        Typeface solidFontAcc = Typeface.createFromAsset(getAssets(), "fonts/fa-solid-900-v5.ttf");
+        accountStatusIcon.setTypeface(solidFontAcc);
+        accountStatusIcon.setText("\uf007"); // User icon
+        
         // --- NEW: Activity Bar Click Listeners ---
         navExplorer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showPanel("explorer");
+            }
+        });
+        
+        // --- Accounts Panel Logic ---
+        navAccounts.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showPanel("accounts");
+                updateAccountsUI(); // Refresh the view when opened
+            }
+        });
+        
+        btnSaveAccount.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String user = accountUsernameInput.getText().toString().trim();
+                String token = accountTokenInput.getText().toString().trim();
+                
+                if (user.isEmpty() || token.isEmpty()) {
+                    AppToast.showError(EditorActivity.this, "Username and Token cannot be empty.");
+                    return;
+                }
+                
+                SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                prefs.edit().putString("git_username", user).putString("git_token", token).apply();
+                
+                AppToast.showSuccess(EditorActivity.this, "Credentials saved successfully!");
+                updateAccountsUI();
+            }
+        });
+        
+        btnLogoutAccount.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                prefs.edit().remove("git_username").remove("git_token").apply();
+                
+                AppToast.showSuccess(EditorActivity.this, "Logged out successfully.");
+                updateAccountsUI();
+            }
+        });
+        
+        // --- Search Panel Logic ---
+        navSearch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showPanel("search");
+            }
+        });
+        
+        // --- Run and Debug Panel Logic ---
+        navRun.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showPanel("run");
+            }
+        });
+        
+        cardRunActive.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                runActiveFile();
+            }
+        });
+        
+        toolTerminal.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(EditorActivity.this, TerminalActivity.class));
+            }
+        });
+        
+        toolPython.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(EditorActivity.this, ConsoleActivity.class));
+            }
+        });
+        
+        toolWeb.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Passing empty extras just to open the WebBrowser
+                Intent intent = new Intent(EditorActivity.this, WebBrowserActivity.class);
+                startActivity(intent);
+            }
+        });
+        
+        btnSearchAction.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String query = searchInput.getText().toString().trim();
+                if (query.isEmpty()) {
+                    AppToast.showInfo(EditorActivity.this, "Enter a search term.");
+                    return;
+                }
+                if (treeCurrentDir == null) {
+                    AppToast.showError(EditorActivity.this, "Open a project folder first!");
+                    return;
+                }
+                performSearch(query, treeCurrentDir);
+            }
+        });
+        
+        // When a search result is clicked, open the file and jump to the line
+        searchResultsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                SearchResult result = searchResults.get(position);
+                File fileToOpen = new File(result.filePath);
+                
+                // Load the file
+                loadFile(fileToOpen);
+                buildTabs();
+                
+                // Jump to the line after a short delay to let the editor load
+                final int targetLine = result.lineNumber;
+                codeEditorWebView.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        goToLine(targetLine);
+                    }
+                }, 500);
+                
+                editorDrawer.closeDrawer(Gravity.LEFT);
             }
         });
 
@@ -662,87 +853,90 @@ public class EditorActivity extends Activity {
         btnRun.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!editorReady) {
-                    AppToast.showInfo(EditorActivity.this, "Editor is still loading...");
-                    return;
-                }
-
-                if (currentFile == null) {
-                    AppToast.showInfo(EditorActivity.this, "No file open.");
-                    return;
-                }
-
-                String ext = "";
-                String name = currentFile.getName();
-                int dotIndex = name.lastIndexOf('.');
-                if (dotIndex != -1) {
-                    ext = name.substring(dotIndex + 1).toLowerCase();
-                }
-
-                if (ext.equals("py")) {
-                    codeEditorWebView.evaluateJavascript("getCode();", new android.webkit.ValueCallback<String>() {
-                        @Override
-                        public void onReceiveValue(String result) {
-                            try {
-                                String cleanCode = new JSONArray("[" + result + "]").getString(0);
-                                android.content.Intent intent = new android.content.Intent(EditorActivity.this, ConsoleActivity.class);
-                                intent.putExtra("python_code", cleanCode);
-                                intent.putExtra("python_dir", currentFile.getParent()); 
-                                startActivity(intent);
-                            } catch (Exception e) {
-                                AppToast.showError(EditorActivity.this, "Error getting code: " + e.getMessage());
-                            }
-                        }
-                    });
-                    return;
-                }
-                
-                if (!ext.equals("html") && !ext.equals("css") && !ext.equals("js")) {
-                    AppToast.showError(EditorActivity.this, "Running ." + ext + " is not supported yet.");
-                    return;
-                }
-
-                codeEditorWebView.evaluateJavascript("getCode();", new android.webkit.ValueCallback<String>() {
-                    @Override
-                    public void onReceiveValue(String result) {
-                        try {
-                            if (result == null || "null".equals(result)) {
-                                throw new Exception("Editor returned no content.");
-                            }
-
-                            String cleanCode = new JSONArray("[" + result + "]").getString(0);
-                            
-                            android.content.Intent intent = new android.content.Intent(EditorActivity.this, WebBrowserActivity.class);
-                            intent.putExtra("code", cleanCode);
-                            intent.putExtra("file_name", currentFile.getName());
-
-                            String parentDir = currentFile.getParent();
-                            intent.putExtra("base_url", "file://" + parentDir + "/");
-
-                            String ext = "";
-                            int dotIndex = currentFile.getName().lastIndexOf('.');
-                            if (dotIndex != -1) {
-                                ext = currentFile.getName().substring(dotIndex + 1).toLowerCase();
-                            }
-                            intent.putExtra("extension", ext);
-
-                            startActivity(intent);
-
-                        } catch (Exception e) {
-                            AppToast.showError(EditorActivity.this, "Error launching preview: " + e.getMessage());
-                        }
-                    }
-                });
+                runActiveFile();
             }
         });
     }
 
-    // Handles switching between Activity Bar menu and panels ---
+    private void performSearch(final String query, final File dir) {
+        AppLoader.show(this, "Searching...");
+        searchResults.clear();
+        searchAdapter.notifyDataSetChanged();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // This runs in the background!
+                searchDirectory(dir, query);
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        AppLoader.hide();
+                        searchAdapter.notifyDataSetChanged();
+                        if (searchResults.isEmpty()) {
+                            AppToast.showInfo(EditorActivity.this, "No results found.");
+                        } else {
+                            AppToast.showSuccess(EditorActivity.this, searchResults.size() + " results found.");
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void searchDirectory(File dir, String query) {
+        if (dir == null || !dir.isDirectory()) return;
+        
+        // Skip .git and build folders to speed up search
+        String name = dir.getName();
+        if (name.equals(".git") || name.equals("build") || name.equals("bin")) return;
+
+        File[] files = dir.listFiles();
+        if (files == null) return;
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                searchDirectory(file, query);
+            } else {
+                // Check file extension to only search text files
+                String ext = "";
+                int dot = file.getName().lastIndexOf('.');
+                if (dot != -1) ext = file.getName().substring(dot + 1).toLowerCase();
+
+                if (ext.equals("java") || ext.equals("py") || ext.equals("js") || ext.equals("html") || 
+                    ext.equals("css") || ext.equals("xml") || ext.equals("json") || ext.equals("md") || 
+                    ext.equals("txt") || ext.equals("gradle") || ext.equals("properties")) {
+                    
+                    try {
+                        BufferedReader br = new BufferedReader(new FileReader(file));
+                        String line;
+                        int lineNumber = 1;
+                        while ((line = br.readLine()) != null) {
+                            if (line.toLowerCase().contains(query.toLowerCase())) {
+                                // Found a match!
+                                searchResults.add(new SearchResult(file.getName(), file.getAbsolutePath(), line, lineNumber));
+                            }
+                            lineNumber++;
+                        }
+                        br.close();
+                    } catch (Exception e) {
+                        // Ignore unreadable files
+                    }
+                }
+            }
+        }
+    }
+
+    // Update showPanel to handle "search"
     private void showPanel(String panelName) {
         // Hide everything first
         activityBarLayout.setVisibility(View.GONE);
         panelExplorer.setVisibility(View.GONE);
         panelSourceControl.setVisibility(View.GONE);
+        panelSearch.setVisibility(View.GONE);
+        panelRunAndDebug.setVisibility(View.GONE);
+        panelAccounts.setVisibility(View.GONE);
         
         if (panelName.equals("menu")) {
             sideBarHeader.setVisibility(View.GONE);
@@ -752,7 +946,7 @@ public class EditorActivity extends Activity {
         } else if (panelName.equals("explorer")) {
             sideBarHeader.setVisibility(View.VISIBLE);
             bottomPanel.setVisibility(View.VISIBLE);
-            treeRootName.setText(treeCurrentDir.getName());
+            if (treeCurrentDir != null) treeRootName.setText(treeCurrentDir.getName());
             treeUpBtn.setText("\uf062");
             panelExplorer.setVisibility(View.VISIBLE);
             dropActivityBarBtn.setVisibility(View.VISIBLE);
@@ -763,7 +957,132 @@ public class EditorActivity extends Activity {
             treeUpBtn.setText("\uf126");
             panelSourceControl.setVisibility(View.VISIBLE);
             dropActivityBarBtn.setVisibility(View.VISIBLE);
+        } else if (panelName.equals("search")) {
+            sideBarHeader.setVisibility(View.VISIBLE);
+            bottomPanel.setVisibility(View.GONE);
+            treeRootName.setText("Search");
+            treeUpBtn.setText("\uf002");
+            panelSearch.setVisibility(View.VISIBLE);
+            dropActivityBarBtn.setVisibility(View.VISIBLE);
+        } else if (panelName.equals("run")) {
+            sideBarHeader.setVisibility(View.VISIBLE);
+            bottomPanel.setVisibility(View.GONE);
+            treeRootName.setText("Run and Debug");
+            treeUpBtn.setText("\uf04b");
+            panelRunAndDebug.setVisibility(View.VISIBLE);
+            dropActivityBarBtn.setVisibility(View.VISIBLE);
+        } else if (panelName.equals("accounts")) {
+            sideBarHeader.setVisibility(View.VISIBLE);
+            bottomPanel.setVisibility(View.GONE);
+            treeRootName.setText("Accounts");
+            treeUpBtn.setText("\uf007");
+            panelAccounts.setVisibility(View.VISIBLE);
+            dropActivityBarBtn.setVisibility(View.VISIBLE);
         }
+    }
+    
+    private void updateAccountsUI() {
+        SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+        String user = prefs.getString("git_username", "");
+        String token = prefs.getString("git_token", "");
+        
+        if (!user.isEmpty() && !token.isEmpty()) {
+            // User is logged in
+            accountStatusText.setText("Logged in as: " + user);
+            accountStatusText.setTextColor(Color.parseColor("#3FB950")); // Green
+            accountStatusIcon.setTextColor(Color.parseColor("#3FB950")); // Green icon
+            
+            accountUsernameInput.setText(user);
+            accountTokenInput.setText(token);
+            
+            btnSaveAccount.setText("Update Credentials");
+            btnLogoutAccount.setVisibility(View.VISIBLE);
+        } else {
+            // Not logged in
+            accountStatusText.setText("Not Logged In");
+            accountStatusText.setTextColor(Color.parseColor("#F85149")); // Red
+            accountStatusIcon.setTextColor(Color.parseColor("#8B5CF6")); // Purple icon
+            
+            accountUsernameInput.setText("");
+            accountTokenInput.setText("");
+            
+            btnSaveAccount.setText("Save Credentials");
+            btnLogoutAccount.setVisibility(View.GONE);
+        }
+    }
+    
+    private void runActiveFile() {
+        if (!editorReady) {
+            AppToast.showInfo(EditorActivity.this, "Editor is still loading...");
+            return;
+        }
+
+        if (currentFile == null) {
+            AppToast.showInfo(EditorActivity.this, "No file open.");
+            return;
+        }
+
+        String ext = "";
+        String name = currentFile.getName();
+        int dotIndex = name.lastIndexOf('.');
+        if (dotIndex != -1) {
+            ext = name.substring(dotIndex + 1).toLowerCase();
+        }
+
+        if (ext.equals("py")) {
+            codeEditorWebView.evaluateJavascript("getCode();", new android.webkit.ValueCallback<String>() {
+                @Override
+                public void onReceiveValue(String result) {
+                    try {
+                        String cleanCode = new JSONArray("[" + result + "]").getString(0);
+                        android.content.Intent intent = new android.content.Intent(EditorActivity.this, ConsoleActivity.class);
+                        intent.putExtra("python_code", cleanCode);
+                        intent.putExtra("python_dir", currentFile.getParent()); 
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        AppToast.showError(EditorActivity.this, "Error getting code: " + e.getMessage());
+                    }
+                }
+            });
+            return;
+        }
+        
+        if (!ext.equals("html") && !ext.equals("css") && !ext.equals("js")) {
+            AppToast.showError(EditorActivity.this, "Running ." + ext + " is not supported yet.");
+            return;
+        }
+
+        codeEditorWebView.evaluateJavascript("getCode();", new android.webkit.ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String result) {
+                try {
+                    if (result == null || "null".equals(result)) {
+                        throw new Exception("Editor returned no content.");
+                    }
+
+                    String cleanCode = new JSONArray("[" + result + "]").getString(0);
+                    
+                    android.content.Intent intent = new android.content.Intent(EditorActivity.this, WebBrowserActivity.class);
+                    intent.putExtra("code", cleanCode);
+                    intent.putExtra("file_name", currentFile.getName());
+
+                    String parentDir = currentFile.getParent();
+                    intent.putExtra("base_url", "file://" + parentDir + "/");
+
+                    String ext = "";
+                    int dotIndex = currentFile.getName().lastIndexOf('.');
+                    if (dotIndex != -1) {
+                        ext = currentFile.getName().substring(dotIndex + 1).toLowerCase();
+                    }
+                    intent.putExtra("extension", ext);
+
+                    startActivity(intent);
+
+                } catch (Exception e) {
+                    AppToast.showError(EditorActivity.this, "Error launching preview: " + e.getMessage());
+                }
+            }
+        });
     }
 
     public class WebAppInterface {
@@ -913,7 +1232,20 @@ public class EditorActivity extends Activity {
                     treeAdapter.notifyDataSetChanged();
                 }
             }
-
+            
+            // Context-aware Run Button Update
+            textRunActiveTitle.setText("Run " + file.getName());
+            if (ext.equals("py")) {
+                textRunActiveSub.setText("Python Script");
+                iconRunActive.setTextColor(Color.parseColor("#3776AB")); // Python Blue
+            } else if (ext.equals("html") || ext.equals("css") || ext.equals("js")) {
+                textRunActiveSub.setText("Web Project");
+                iconRunActive.setTextColor(Color.parseColor("#3FB950")); // Web Green
+            } else {
+                textRunActiveSub.setText("Unsupported format");
+                iconRunActive.setTextColor(Color.parseColor("#888888")); // Gray
+            }
+            
         } catch (Exception e) {
             AppToast.showError(EditorActivity.this, "Error reading file: " + e.getMessage());
         }
