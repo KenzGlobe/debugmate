@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_custom_popup"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <com.kenzglobe.debugmate.AppBoldTextView
+        android:id="@+id/dialog_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Title"
+        android:textColor="#8B5CF6"
+        android:textSize="18sp" />
+
+    <com.kenzglobe.debugmate.AppTextView
+        android:id="@+id/dialog_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="24dp"
+        android:text="Message"
+        android:textColor="#E6E6E6"
+        android:textSize="14sp" />
+    
+    <FrameLayout
+        android:id="@+id/dialog_custom_view_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:orientation="horizontal">
+        
+        <Button
+            android:id="@+id/dialog_btn_negative"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:background="@android:color/transparent"
+            android:text="CANCEL"
+            android:textColor="#888888"
+            android:textSize="14sp" />
+        
+        <Button
+            android:id="@+id/dialog_btn_positive"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="#8B5CF6"
+            android:text="OK"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+        
+    </LinearLayout>
+    
+</LinearLayout>

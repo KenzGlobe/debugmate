@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/settings_section_bg"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_marginBottom="12dp"
+    android:elevation="4dp">
+
+    <!-- Title Row (Clickable) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:id="@+id/cheat_item_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#8B5CF6"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/cheat_expand_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#888888"
+            android:textSize="16sp" />
+            
+    </LinearLayout>
+
+    <!-- Details Container (Hidden by default) -->
+    <LinearLayout
+        android:id="@+id/cheat_details_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+        
+        <!-- This is where we will dynamically add all the CodeBlocks -->
+        <LinearLayout
+            android:id="@+id/cheat_code_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+        
+        <com.kenzglobe.debugmate.AppTextView
+            android:id="@+id/cheat_item_explanation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textColor="#E6E6E6"
+            android:textSize="13sp"
+            android:lineSpacingExtra="4dp" />
+        
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            background-color: #1E1E1E; 
+            color: #E6E6E6; 
+            font-family: 'Courier New', monospace; 
+            padding: 16px; 
+            line-height: 1.6; 
+        }
+        h1 { 
+            color: #8B5CF6; 
+            border-bottom: 2px solid #8B5CF6; 
+            padding-bottom: 8px; 
+            font-size: 24px;
+        }
+        h2 { 
+            color: #3FB950; 
+            margin-top: 28px; 
+            font-size: 18px;
+        }
+        h3 {
+            color: #58A6FF;
+            font-size: 15px;
+        }
+        p {
+            font-size: 14px;
+        }
+        code { 
+            background-color: #262626; 
+            color: #F85149; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            font-size: 13px;
+        }
+        pre { 
+            background-color: #262626; 
+            padding: 12px; 
+            border-radius: 8px; 
+            overflow-x: auto; 
+            border-left: 4px solid #58A6FF; 
+            font-size: 13px;
+        }
+        pre code {
+            color: #E6E6E6;
+            background-color: transparent;
+            padding: 0;
+        }
+        .card { 
+            background-color: #262626; 
+            padding: 16px; 
+            border-radius: 8px; 
+            margin-bottom: 16px; 
+        }
+        .note { 
+            background-color: #2E2E2E; 
+            border-left: 4px solid #8B5CF6; 
+            padding: 12px; 
+            margin: 16px 0; 
+            border-radius: 4px; 
+            font-size: 13px;
+        }
+        ul { 
+            font-size: 14px;
+            padding-left: 20px; 
+        }
+        li { 
+            margin-bottom: 8px; 
+        }
+        a { 
+            color: #58A6FF; 
+            text-decoration: none; 
+            font-weight: bold; 
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #262626;
+            color: #8B5CF6;
+        }
+    </style>
+</head>
+<body>
+    <h1>Variables</h1>
+    <p>Think of a variable as a <b>labeled box</b> in the computer's memory. You put data inside the box, give it a name, and later you can look inside the box to get the data or replace it with something new.</p>
+    
+    <div class="note">
+        <b>Why do we need them?</b> Variables allow us to store, reuse, and manipulate data dynamically. Instead of hardcoding a value like <code>21</code>, we store it in <code>age</code> and use <code>age</code> throughout the program.
+    </div>
+
+    <h2>1. Declaration vs. Initialization</h2>
+    <ul>
+        <li><b>Declaration:</b> Creating the variable and giving it a name (and a type, in some languages). You are just reserving the box.</li>
+        <li><b>Initialization:</b> Putting the first piece of data into the variable. You are filling the box.</li>
+    </ul>
+    <pre><code># Python
+name = "Samuel" # Declared and initialized at the same time
+
+# Java
+int age;       // Declaration (empty box)
+age = 21;      // Initialization (filling the box)</code></pre>
+
+    <h2>2. Data Types</h2>
+    <p>Computers need to know what kind of data is inside the box. Here are the most common types:</p>
+    
+    <table>
+        <tr>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Example</th>
+        </tr>
+        <tr>
+            <td><b>String</b></td>
+            <td>Text (letters, numbers, symbols)</td>
+            <td><code>"Hello"</code></td>
+        </tr>
+        <tr>
+            <td><b>Integer</b></td>
+            <td>Whole numbers</td>
+            <td><code>42</code></td>
+        </tr>
+        <tr>
+            <td><b>Float / Double</b></td>
+            <td>Decimal numbers</td>
+            <td><code>3.14</code></td>
+        </tr>
+        <tr>
+            <td><b>Boolean</b></td>
+            <td>True or False</td>
+            <td><code>true</code></td>
+        </tr>
+        <tr>
+            <td><b>List / Array</b></td>
+            <td>A collection of items</td>
+            <td><code>[1, 2, 3]</code></td>
+        </tr>
+    </table>
+
+    <h2>3. Statically vs. Dynamically Typed</h2>
+    <p>Different languages handle types differently:</p>
+    
+    <div class="card">
+        <h3>Dynamically Typed (Python, JavaScript)</h3>
+        <p>You don't need to specify the type. The computer figures it out based on the value.</p>
+        <pre><code>x = 10      # x is an integer
+x = "Hello" # Now x is a string (Allowed!)</code></pre>
+    </div>
+
+    <div class="card">
+        <h3>Statically Typed (Java, C++)</h3>
+        <p>You <b>must</b> specify the type when declaring. It cannot change later.</p>
+        <pre><code>int x = 10;      // x is an integer
+x = "Hello";     // ERROR! Cannot put text in an integer box.</code></pre>
+    </div>
+
+    <h2>4. Naming Conventions</h2>
+    <p>You can name a variable almost anything, but there are strict rules and best practices:</p>
+    <ul>
+        <li><b>Must follow:</b> Can only contain letters, numbers, and underscores (<code>_</code>).</li>
+        <li><b>Must follow:</b> Cannot start with a number (e.g., <code>1name</code> is invalid).</li>
+        <li><b>Must follow:</b> Cannot be a reserved keyword (like <code>if</code>, <code>for</code>, <code>class</code>).</li>
+        <li><b>Best Practice:</b> Use meaningful names. <code>user_age</code> is better than <code>x</code>.</li>
+        <li><b>Best Practice:</b> Use <code>snake_case</code> in Python (e.g., <code>my_variable</code>), and <code>camelCase</code> in Java/JS (e.g., <code>myVariable</code>).</li>
+    </ul>
+
+    <h2>5. Scope: Where do variables live?</h2>
+    <p>Variables are not visible everywhere. Their "scope" determines where they can be used.</p>
+    
+    <div class="card">
+        <h3>Local Variables</h3>
+        <p>Declared inside a function or block. They can only be used inside that block.</p>
+        <pre><code>def my_function():
+    local_var = 5
+    print(local_var)
+
+my_function()
+print(local_var) # ERROR! local_var doesn't exist out here.</code></pre>
+    </div>
+
+    <div class="card">
+        <h3>Global Variables</h3>
+        <p>Declared outside of any function. They can be accessed anywhere in the program.</p>
+        <pre><code>global_var = 10
+
+def my_function():
+    print(global_var) # Allowed!
+
+my_function()</code></pre>
+    </div>
+
+    <h2>6. Mutability (Constants)</h2>
+    <p>Sometimes you want to create a variable that <b>cannot</b> be changed once it is set. These are called Constants.</p>
+    <pre><code>// Java
+final double PI = 3.14159;
+// PI = 4.0; // ERROR! You cannot change a final variable.
+
+# Python (Convention: UPPERCASE means constant)
+MAX_SPEED = 100
+# Python doesn't strictly enforce constants, but it's a rule developers follow.</code></pre>
+
+    <div class="note">
+        <b>Practice makes perfect!</b> Head over to the <a href="cheat://python">Python Cheat Sheet</a> to see how to write variables, or check out the <a href="cheat://java">Java Cheat Sheet</a> for static typing examples.
+    </div>
+</body>
+</html>

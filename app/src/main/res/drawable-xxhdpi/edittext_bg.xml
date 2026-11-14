@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The Background Border Color (Bottom Layer) -->
+    <item>
+        <shape>
+            <solid android:color="#444444" />
+        </shape>
+    </item>
+
+    <!-- The Main Background (Top Layer) -->
+    <!-- By shifting it down 2dp and up 2dp, we hide the left/right borders -->
+    <item android:top="1dp" android:bottom="1dp">
+        <shape>
+            <solid android:color="#1E1E1E" />
+        </shape>
+    </item>
+
+</layer-list>

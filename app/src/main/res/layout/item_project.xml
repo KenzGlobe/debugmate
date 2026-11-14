@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:background="@drawable/settings_section_bg"
+    android:elevation="4dp"
+    android:padding="16dp"
+    android:orientation="vertical"
+    android:gravity="center_horizontal">
+
+    <!-- Large Centered Icon -->
+    <TextView
+        android:id="@+id/project_icon"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:gravity="center"
+        android:textSize="44sp" />
+
+    <!-- Project Name -->
+    <com.kenzglobe.debugmate.AppBoldTextView
+        android:id="@+id/project_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp" />
+
+    <!-- Project Type (e.g. PYTHON PROJECT) -->
+    <com.kenzglobe.debugmate.AppTextView
+        android:id="@+id/project_type"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:textColor="#8B5CF6"
+        android:textSize="10sp" />
+
+    <!-- Folder Name Only (To save space) -->
+    <com.kenzglobe.debugmate.AppTextView
+        android:id="@+id/project_path"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="middle"
+        android:textColor="#666666"
+        android:textSize="10sp" />
+
+</LinearLayout>

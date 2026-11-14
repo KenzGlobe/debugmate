@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/code_bg"
+    android:layout_marginTop="12dp">
+
+    <!-- File Name & Copy Button Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="8dp">
+        
+        <com.kenzglobe.debugmate.AppTextView
+            android:id="@+id/code_block_filename"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#AAAAAA"
+            android:textSize="12sp" />
+        
+        <TextView
+            android:id="@+id/code_block_copy_btn"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:gravity="center"
+            android:background="@drawable/fab_bg"
+            android:padding="4dp"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
+        
+    </LinearLayout>
+
+    <!-- The Code -->
+    <com.kenzglobe.debugmate.AppCodeFontTextView
+        android:id="@+id/code_block_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:textColor="#3FB950"
+        android:textSize="13sp"
+        android:textIsSelectable="true" />
+
+</LinearLayout>

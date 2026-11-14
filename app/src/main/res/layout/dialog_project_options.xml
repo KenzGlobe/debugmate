@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="220dp"
+    android:layout_height="235dp"
+    android:background="@drawable/bg_custom_popup"
+    android:orientation="vertical">
+
+    <com.kenzglobe.debugmate.AppBoldTextView
+        android:id="@+id/options_title"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:elevation="6dp"
+        android:text="Options:"
+        android:textColor="#8B5CF6"
+        android:textSize="13sp" />
+    
+    <View
+        android:layout_width="195dp"
+        android:layout_height="1dp"
+        android:layout_gravity="center_horizontal"
+        android:background="#444444" />
+
+    <ListView
+        android:id="@+id/options_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    
+</LinearLayout>
