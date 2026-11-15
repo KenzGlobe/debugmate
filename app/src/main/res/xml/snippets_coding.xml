@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
+    android:keyHeight="50dp"
+    android:horizontalGap="4px"
+    android:verticalGap="4px">
+    
+    <Row>
+        <Key android:codes="-113" android:keyIcon="@drawable/ic_menu" android:keyWidth="20%p" />
+        <Key android:codes="-112" android:keyIcon="@drawable/ic_clipboard" android:keyWidth="19%p" />
+        <Key android:codes="-114" android:keyIcon="@drawable/ic_undo" android:keyWidth="18%p" />
+        <Key android:codes="-115" android:keyIcon="@drawable/ic_redo" android:keyWidth="19%p" />
+        <Key android:codes="-116" android:keyIcon="@drawable/ic_emoji" android:keyWidth="19%p" />
+    </Row>
+    
+    <Row>
+        <Key android:codes="9" android:keyLabel="TAB" android:keyWidth="20%p" />
+        <Key android:codes="-106" android:keyLabel="COPY" android:keyWidth="19%p" />
+        <Key android:codes="-107" android:keyLabel="CUT" android:keyWidth="18%p" />
+        <Key android:codes="-104" android:keyIcon="@drawable/ic_up" android:keyWidth="19%p" />
+        <Key android:codes="-108" android:keyLabel="PASTE" android:keyWidth="19%p" />
+    </Row>
+    
+    <Row>
+        <Key android:codes="-109" android:keyLabel="CTRL" android:keyWidth="20%p" />
+        <Key android:codes="-110" android:keyLabel="SLCT" android:keyWidth="19%p" />
+        <Key android:codes="-100" android:keyIcon="@drawable/ic_left" android:keyWidth="18%p" />
+        <Key android:codes="-105" android:keyIcon="@drawable/ic_down" android:keyWidth="19%p" />
+        <Key android:codes="-101" android:keyIcon="@drawable/ic_right" android:keyWidth="19%p" />
+    </Row>
+    
+    <Row>
+        <Key android:codes="-200" android:keyLabel="S1" android:keyWidth="25%p" />
+        <Key android:codes="-201" android:keyLabel="S2" android:keyWidth="25%p" />
+        <Key android:codes="-202" android:keyLabel="S3" android:keyWidth="25%p" />
+        <Key android:codes="-203" android:keyLabel="S4" android:keyWidth="25%p" />
+    </Row>
+    
+    <Row>
+        <Key android:codes="-204" android:keyLabel="S5" android:keyWidth="25%p" />
+        <Key android:codes="-205" android:keyLabel="S6" android:keyWidth="25%p" />
+        <Key android:codes="-206" android:keyLabel="S7" android:keyWidth="25%p" />
+        <Key android:codes="-207" android:keyLabel="S8" android:keyWidth="25%p" />
+    </Row>
+    
+    <Row>
+        <Key android:codes="-208" android:keyLabel="S9" android:keyWidth="25%p" />
+        <Key android:codes="-209" android:keyLabel="S10" android:keyWidth="25%p" />
+        <Key android:codes="-210" android:keyLabel="S11" android:keyWidth="25%p" />
+        <Key android:codes="-211" android:keyLabel="S12" android:keyWidth="25%p" />
+    </Row>
+
+    <Row>
+        <Key android:codes="-103" android:keyLabel="ABC" android:keyWidth="25%p" />
+        <Key android:codes="32" android:keyLabel="SPACE" android:keyWidth="50%p" />
+        <Key android:codes="-5" android:keyIcon="@drawable/ic_delete" android:keyWidth="25%p" />
+    </Row>
+    
+</Keyboard>

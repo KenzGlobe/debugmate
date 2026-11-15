@@ -4,7 +4,30 @@
     android:horizontalGap="4px"
     android:verticalGap="4px">
 
-    <!-- Row 1 -->
+    <Row>
+        <Key android:codes="-113" android:keyIcon="@drawable/ic_menu" android:keyWidth="20%p" />
+        <Key android:codes="-112" android:keyIcon="@drawable/ic_clipboard" android:keyWidth="19%p" />
+        <Key android:codes="-114" android:keyIcon="@drawable/ic_undo" android:keyWidth="18%p" />
+        <Key android:codes="-115" android:keyIcon="@drawable/ic_redo" android:keyWidth="19%p" />
+        <Key android:codes="-116" android:keyIcon="@drawable/ic_emoji" android:keyWidth="19%p" />
+    </Row>
+    
+    <Row>
+        <Key android:codes="9" android:keyLabel="TAB" android:keyWidth="20%p" />
+        <Key android:codes="-106" android:keyLabel="COPY" android:keyWidth="19%p" />
+        <Key android:codes="-107" android:keyLabel="CUT" android:keyWidth="18%p" />
+        <Key android:codes="-104" android:keyIcon="@drawable/ic_up" android:keyWidth="19%p" />
+        <Key android:codes="-108" android:keyLabel="PASTE" android:keyWidth="19%p" />
+    </Row>
+    
+    <Row>
+        <Key android:codes="-109" android:keyLabel="CTRL" android:keyWidth="20%p" />
+        <Key android:codes="-110" android:keyLabel="SLCT" android:keyWidth="19%p" />
+        <Key android:codes="-100" android:keyIcon="@drawable/ic_left" android:keyWidth="18%p" />
+        <Key android:codes="-105" android:keyIcon="@drawable/ic_down" android:keyWidth="19%p" />
+        <Key android:codes="-101" android:keyIcon="@drawable/ic_right" android:keyWidth="19%p" />
+    </Row>
+
     <Row>
         <Key android:codes="128027" android:keyLabel="🐛" android:keyWidth="12.5%p" />
         <Key android:codes="9989"   android:keyLabel="✅" android:keyWidth="12.5%p" />
@@ -16,7 +39,6 @@
         <Key android:codes="128295" android:keyLabel="🔧" android:keyWidth="12.5%p" />
     </Row>
 
-    <!-- Row 2 -->
     <Row>
         <Key android:codes="129514" android:keyLabel="🧪" android:keyWidth="12.5%p" />
         <Key android:codes="128221" android:keyLabel="📝" android:keyWidth="12.5%p" />
@@ -28,7 +50,6 @@
         <Key android:codes="8505"   android:keyLabel="ℹ" android:keyWidth="12.5%p" />
     </Row>
 
-    <!-- Row 3 -->
     <Row>
         <Key android:codes="128230" android:keyLabel="📦" android:keyWidth="12.5%p" />
         <Key android:codes="128296" android:keyLabel="🔨" android:keyWidth="12.5%p" />
@@ -40,7 +61,6 @@
         <Key android:codes="128077" android:keyLabel="👍" android:keyWidth="12.5%p" />
     </Row>
 
-    <!-- Row 4 -->
     <Row>
         <Key android:codes="128078" android:keyLabel="👎" android:keyWidth="12.5%p" />
         <Key android:codes="128517" android:keyLabel="😅" android:keyWidth="12.5%p" />
@@ -52,7 +72,6 @@
         <Key android:codes="128588" android:keyLabel="🙌" android:keyWidth="12.5%p" />
     </Row>
 
-    <!-- Row 5 -->
     <Row>
         <Key android:codes="127881" android:keyLabel="🎉" android:keyWidth="12.5%p" />
         <Key android:codes="128150" android:keyLabel="💖" android:keyWidth="12.5%p" />
@@ -64,7 +83,6 @@
         <Key android:codes="11088"  android:keyLabel="⭐" android:keyWidth="12.5%p" />
     </Row>
 
-    <!-- Bottom utility row -->
     <Row>
         <Key android:codes="-103" android:keyLabel="ABC" android:keyWidth="20%p" />
         <Key android:codes="32"   android:keyLabel="SPACE" android:keyWidth="60%p" />

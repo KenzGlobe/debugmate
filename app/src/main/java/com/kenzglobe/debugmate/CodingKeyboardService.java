@@ -11,8 +11,9 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import java.util.HashMap;
-import java.util.List;
+import android.content.ClipboardManager;
+import android.content.ClipData;
+import java.util.*;
 
 public class CodingKeyboardService extends InputMethodService implements KeyboardView.OnKeyboardActionListener {
 
@@ -25,6 +26,7 @@ public class CodingKeyboardService extends InputMethodService implements Keyboar
     private static final int KEY_PASTE = -108;
     private static final int KEY_CTRL = -109;
     private static final int KEY_SELECT_ALL = -110;
+    private static final int KEY_SNIPPETS = -120;
     private static final int KEY_SETTINGS = -111;
     private static final int KEY_CLIPBOARD = -112;
 
@@ -33,11 +35,15 @@ public class CodingKeyboardService extends InputMethodService implements Keyboar
     private Keyboard keyboardSymbols;
     private Keyboard keyboardMenu;
     private Keyboard keyboardEmoji;
+    private Keyboard keyboardSnippets;
 
     private boolean isCaps = false;
     private boolean isCapsLock = false;
     private boolean isCtrl = false;
     private long lastShiftPressTime = 0;
+    private ArrayList<String> activeSnippets = new ArrayList<>();
+    private Keyboard keyboardClipboard;
+    private ArrayList<String> clipHistory = new ArrayList<>();
 
     // --- For Delete Repeat ---
     private Handler deleteHandler = new Handler(Looper.getMainLooper());
@@ -49,7 +55,7 @@ public class CodingKeyboardService extends InputMethodService implements Keyboar
     private Handler longPressHandler = new Handler(Looper.getMainLooper());
     private Runnable longPressRunnable;
     private boolean isLongPressed = false;
-
+    
     @Override
     public View onCreateInputView() {
         View view = getLayoutInflater().inflate(R.layout.keyboard, null);
@@ -58,6 +64,8 @@ public class CodingKeyboardService extends InputMethodService implements Keyboar
         keyboardSymbols = new Keyboard(this, R.xml.symbols_coding);
         keyboardMenu  = new Keyboard(this, R.xml.menu_coding);
         keyboardEmoji = new Keyboard(this, R.xml.emoji_coding);
+        keyboardSnippets = new Keyboard(this, R.xml.snippets_coding);
+        keyboardClipboard = new Keyboard(this, R.xml.clipboard_coding);
 
         // Populate the long press mappings
         longPressMap.put('q', '%');
@@ -135,10 +143,23 @@ public class CodingKeyboardService extends InputMethodService implements Keyboar
     }
 
     private void sendArrowKey(InputConnection ic, int keyCode) {
-        int metaState = isCaps ? KeyEvent.META_SHIFT_ON : 0;
-        long now = android.os.SystemClock.uptimeMillis(); // FIX: Use real timestamp
+        int metaState = 0;
+        if (isCaps) metaState |= KeyEvent.META_SHIFT_ON;
+        
+        // If CTRL is active, add the CTRL modifier for word-jumping
+        if (isCtrl) {
+            metaState |= KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON;
+        }
+        
+        long now = android.os.SystemClock.uptimeMillis();
         ic.sendKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, metaState));
         ic.sendKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0, metaState));
+        
+        // Reset CTRL after using it with an arrow key
+        if (isCtrl) {
+            isCtrl = false;
+            updateCtrlLabel();
+        }
     }
 
     private void sendCtrlLetter(InputConnection ic, char letter) {
@@ -198,9 +219,124 @@ public class CodingKeyboardService extends InputMethodService implements Keyboar
         ic.sendKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, metaState));
         ic.sendKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0, metaState));
     }
+    
+    private void loadSnippetsForCurrentFile() {
+        String ext = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).getString("last_file_ext", "");
+        activeSnippets.clear();
+    
+        if (ext.equals("py")) {
+            activeSnippets.add("print(\"\");");
+            activeSnippets.add("def function_name(args):");
+            activeSnippets.add("if __name__ == \"__main__\":");
+            activeSnippets.add("for i in range(10):");
+            activeSnippets.add("class ClassName:");
+            activeSnippets.add("try:\n    pass\nexcept Exception as e:");
+        } else if (ext.equals("java")) {
+            activeSnippets.add("public void methodName() {}");
+            activeSnippets.add("System.out.println(\"\");");
+            activeSnippets.add("if (condition) {}");
+            activeSnippets.add("for (int i = 0; i < 10; i++) {}");
+            activeSnippets.add("class ClassName {}");
+        } else if (ext.equals("js") || ext.equals("html")) {
+            activeSnippets.add("console.log();");
+            activeSnippets.add("function name() {\n    \n}");
+            activeSnippets.add("document.getElementById();");
+            activeSnippets.add("addEventListener('click', () => {\n    \n});");
+            activeSnippets.add("if (condition) {\n    \n}");
+        } else {
+            // Generic fallback
+            activeSnippets.add("TODO: ");
+            activeSnippets.add("/* Comment */");
+        }
+    
+        // Update the labels on the Snippets Keyboard dynamically
+        List<Keyboard.Key> keys = keyboardSnippets.getKeys();
+        int snippetIndex = 0;
+        
+        for (Keyboard.Key key : keys) {
+            // Only target our generic snippet keys (-200 to -215)
+            if (key.codes[0] >= -215 && key.codes[0] <= -200) {
+                if (snippetIndex < activeSnippets.size()) {
+                    String snippet = activeSnippets.get(snippetIndex);
+                    
+                    // Create a short label for the key
+                    String label = snippet.split("\n")[0]; 
+                    if (label.length() > 8) label = label.substring(0, 8) + "...";
+                    
+                    key.label = label;
+                    snippetIndex++;
+                } else {
+                    // Hide unused keys
+                    key.label = "";
+                    key.codes = new int[]{0}; // Disable it
+                }
+            }
+        }
+        if (kv != null) kv.invalidateAllKeys();
+    }
+    
+    private void addToClipHistory(String text) {
+        // Don't add duplicates to the top
+        clipHistory.remove(text);
+        clipHistory.add(0, text);
+        
+        // Keep only the last 10 items
+        while (clipHistory.size() > 10) {
+            clipHistory.remove(clipHistory.size() - 1);
+        }
+        saveClipHistory();
+    }
+    
+    private void saveClipHistory() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < clipHistory.size(); i++) {
+            // Replace newlines with a space so it fits on the key
+            String clean = clipHistory.get(i).replace("\n", " ");
+            sb.append(clean).append("|||"); // Delimiter
+        }
+        getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).edit()
+            .putString("clipboard_history", sb.toString()).apply();
+    }
+    
+    private void loadClipHistory() {
+        String saved = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).getString("clipboard_history", "");
+        clipHistory.clear();
+        if (!saved.isEmpty()) {
+            String[] items = saved.split("\\|\\|\\|");
+            clipHistory.addAll(Arrays.asList(items));
+        }
+    }
+    
+    private void updateClipboardKeyboardLabels() {
+        loadClipHistory();
+        List<Keyboard.Key> keys = keyboardClipboard.getKeys();
+        int index = 0;
+        
+        for (Keyboard.Key key : keys) {
+            if (key.codes[0] >= -309 && key.codes[0] <= -300) {
+                if (index < clipHistory.size()) {
+                    String text = clipHistory.get(index);
+                    // Truncate long text so it fits on the key
+                    if (text.length() > 15) {
+                        text = text.substring(0, 12) + "...";
+                    }
+                    key.label = text;
+                    index++;
+                } else {
+                    key.label = ""; // Empty slot
+                }
+            }
+        }
+        if (kv != null) kv.invalidateAllKeys();
+    }
 
     @Override
     public void onPress(int primaryCode) {
+         // Trigger a standard keyboard tap vibration
+        if (kv != null) {
+            kv.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP);
+        }
+        
         // --- DELETE/ARROW REPEAT LOGIC ---
         if (primaryCode == Keyboard.KEYCODE_DELETE || 
             primaryCode == -100 || primaryCode == -101 || 
@@ -252,6 +388,19 @@ public class CodingKeyboardService extends InputMethodService implements Keyboar
                 // Trigger long press after 200ms
                 longPressHandler.postDelayed(longPressRunnable, 200);
             }
+        }
+        
+        // --- LONG PRESS TAB FOR SNIPPETS ---
+        if (primaryCode == 9) { // TAB
+            longPressRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    isLongPressed = true;
+                    loadSnippetsForCurrentFile();
+                    if (kv != null) kv.setKeyboard(keyboardSnippets);
+                }
+            };
+            longPressHandler.postDelayed(longPressRunnable, 300); // 300ms delay
         }
     }
 
@@ -355,8 +504,16 @@ public class CodingKeyboardService extends InputMethodService implements Keyboar
                 return;
 
             case KEY_PASTE:
-            case KEY_CLIPBOARD:
                 ic.performContextMenuAction(android.R.id.paste);
+                return;
+                
+            case KEY_CLIPBOARD:
+                isCtrl = false;
+                isCaps = false;
+                updateCtrlLabel();
+                updateShiftIcon(R.drawable.ic_caps_regular);
+                updateClipboardKeyboardLabels(); // Refresh the text on keys
+                kv.setKeyboard(keyboardClipboard);
                 return;
 
             case KEY_CTRL:
@@ -399,14 +556,67 @@ public class CodingKeyboardService extends InputMethodService implements Keyboar
             case 34: ic.commitText("\"\"", 1); sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT); return;
             case 39: ic.commitText("''", 1); sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT); return;
             case 91: ic.commitText("[]", 1); sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT); return;
+            
+            case KEY_SNIPPETS:
+                isCtrl = false;
+                isCaps = false;
+                updateCtrlLabel();
+                updateShiftIcon(R.drawable.ic_caps_regular);
+                loadSnippetsForCurrentFile(); // Refresh snippets before showing
+                kv.setKeyboard(keyboardSnippets);
+                return;
+            
+            case -200: case -201: case -202: case -203:
+            case -204: case -205: case -206: case -207:
+            case -208: case -209: case -210: case -211:
+                int index = Math.abs(primaryCode) - 200;
+                if (index >= 0 && index < activeSnippets.size()) {
+                    String snippet = activeSnippets.get(index);
+                    ic.commitText(snippet, 1);
+                    
+                    // Smart cursor placement (inside the brackets or quotes)
+                    if (snippet.endsWith("();")) {
+                        sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT);
+                        sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT);
+                    } else if (snippet.endsWith("\");")) {
+                        sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT);
+                        sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT);
+                    } else if (snippet.endsWith("{}")) {
+                        sendArrowKey(ic, KeyEvent.KEYCODE_DPAD_LEFT);
+                    }
+                }
+                return;
+                
+            case -300: case -301: case -302: case -303: case -304:
+            case -305: case -306: case -307: case -308: case -309:
+                int clipIndex = Math.abs(primaryCode) - 300;
+                if (clipIndex >= 0 && clipIndex < clipHistory.size()) {
+                    String pasteText = clipHistory.get(clipIndex);
+                    ic.commitText(pasteText, 1);
+                    
+                    // Move that item to the top of the history since it was used
+                    addToClipHistory(pasteText);
+                }
+                return;
 
             default:
                 if (primaryCode > 0) {
+                    char code = (char) primaryCode;
+                    
+                    // --- CTRL + NUMBER INTERCEPT ---
+                    if (isCtrl && code >= '0' && code <= '9') {
+                        String action = "com.kenzglobe.debugmate.ACTION_CTRL_" + code;
+                        sendBroadcast(new android.content.Intent(action));
+                        isCtrl = false;
+                        updateCtrlLabel();
+                        return;
+                    }
+                    // -------------------------------
+                    
                     if (primaryCode > 0xFFFF) {
                         ic.commitText(new String(Character.toChars(primaryCode)), 1);
                         return;
                     }
-                    char code = (char) primaryCode;
                     if (Character.isLetter(code) && isCaps) {
                         code = Character.toUpperCase(code);
                     }
@@ -422,6 +632,30 @@ public class CodingKeyboardService extends InputMethodService implements Keyboar
                     }
                 }
                 break;
+        }
+    }
+    
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        
+        // Setup Clipboard Listener
+        final ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            clipboard.addPrimaryClipChangedListener(new ClipboardManager.OnPrimaryClipChangedListener() {
+                @Override
+                public void onPrimaryClipChanged() {
+                    if (clipboard.hasPrimaryClip()) {
+                        ClipData clip = clipboard.getPrimaryClip();
+                        if (clip != null && clip.getItemCount() > 0) {
+                            CharSequence text = clip.getItemAt(0).getText();
+                            if (text != null && text.length() > 0) {
+                                addToClipHistory(text.toString());
+                            }
+                        }
+                    }
+                }
+            });
         }
     }
 

@@ -5,7 +5,14 @@
     android:horizontalGap="4px"
     android:verticalGap="4px">
 
-    <!-- Row 1: SPECIAL KEYS (1) -->
+    <Row>
+        <Key android:codes="-113" android:keyIcon="@drawable/ic_menu" android:keyWidth="20%p" />
+        <Key android:codes="-112" android:keyIcon="@drawable/ic_clipboard" android:keyWidth="19%p" />
+        <Key android:codes="-114" android:keyIcon="@drawable/ic_undo" android:keyWidth="18%p" />
+        <Key android:codes="-115" android:keyIcon="@drawable/ic_redo" android:keyWidth="19%p" />
+        <Key android:codes="-116" android:keyIcon="@drawable/ic_emoji" android:keyWidth="19%p" />
+    </Row>
+    
     <Row>
         <Key android:codes="9" android:keyLabel="TAB" android:keyWidth="20%p" />
         <Key android:codes="-106" android:keyLabel="COPY" android:keyWidth="19%p" />
@@ -14,7 +21,6 @@
         <Key android:codes="-108" android:keyLabel="PASTE" android:keyWidth="19%p" />
     </Row>
     
-    <!-- Row 2: SPECIAL KEYS (2)-->
     <Row>
         <Key android:codes="-109" android:keyLabel="CTRL" android:keyWidth="20%p" />
         <Key android:codes="-110" android:keyLabel="SLCT" android:keyWidth="19%p" />
@@ -23,7 +29,6 @@
         <Key android:codes="-101" android:keyIcon="@drawable/ic_right" android:keyWidth="19%p" />
     </Row>
 
-    <!-- Row 3: Numbers -->
     <Row>
         <Key android:codes="49" android:keyLabel="1" />
         <Key android:codes="50" android:keyLabel="2" />
@@ -37,7 +42,6 @@
         <Key android:codes="48" android:keyLabel="0" />
     </Row>
 
-    <!-- Row 4: Brackets & Quotes -->
     <Row>
         <Key android:codes="91" android:keyLabel="[" />
         <Key android:codes="93" android:keyLabel="]" />
@@ -51,7 +55,6 @@
         <Key android:codes="92" android:keyLabel="\\" />
     </Row>
     
-    <!-- Row 5: Operators -->
     <Row>
         <Key android:codes="61" android:keyLabel="=" />
         <Key android:codes="43" android:keyLabel="+" />
@@ -65,7 +68,6 @@
         <Key android:codes="59" android:keyLabel=";" />
     </Row>
 
-    <!-- Row 6: Symbols -->
     <Row>
         <Key android:codes="95" android:keyLabel="_" />
         <Key android:codes="35" android:keyLabel="#" />
@@ -79,11 +81,11 @@
         <Key android:codes="96" android:keyLabel="`" />
     </Row>
 
-    <!-- Row 7 -->
     <Row>
         <Key android:codes="-103" android:keyLabel="ABC" android:keyWidth="20%p" />
         <Key android:codes="32" android:keyLabel="SPACE" android:keyWidth="40%p" />
         <Key android:codes="-5" android:keyIcon="@drawable/ic_delete" android:keyWidth="15%p" android:isRepeatable="true" />
         <Key android:codes="10" android:keyIcon="@drawable/ic_enter" android:keyWidth="20%p" />
     </Row>
+    
 </Keyboard>

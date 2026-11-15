@@ -28,13 +28,9 @@ public class EditorActivity extends Activity {
     private com.kenzglobe.debugmate.ColorPickerView colorPickerWheel;
     private View colorPreview;
     
-    private EditText colorHexText,
-        gotoLineInput;
+    private EditText colorHexText;
         
-    private Button btnInsertColor,
-        reduceFontSize,
-        increaseFontSize,
-        btnGoToLine;
+    private Button btnInsertColor;
     
     private TextView treeRootName,
         treeUpBtn,
@@ -61,6 +57,7 @@ public class EditorActivity extends Activity {
     private String pendingExtension = "text";
     private int currentEditorFontSize;
     private int pendingJumpToLine = -1;
+    private int totalDocumentLines = 0;
 
     private Typeface appFont, solidFont, brandsRegularFont;
 
@@ -117,7 +114,7 @@ public class EditorActivity extends Activity {
                 Button btnCancel = dialog.findViewById(R.id.dialog_goto_cancel);
                 Button btnConfirm = dialog.findViewById(R.id.dialog_goto_confirm);
                 
-                input.setHint(gotoLineInput.getHint().toString());
+                input.setHint("1 - " + totalDocumentLines);
 
                 // Auto-focus the input and show the soft keyboard
                 dialog.setOnShowListener(new DialogInterface.OnShowListener() {
@@ -177,21 +174,45 @@ public class EditorActivity extends Activity {
                 runActiveFile();
                 
             } else if ("com.kenzglobe.debugmate.ACTION_JOIN_LINES".equals(action)) {
-                // J: Join Lines
-                String joinScript = 
-                    "editor.focus();" +
-                    "var r = editor.getCursorPosition().row;" +
-                    "var session = editor.session;" +
-                    "var line1 = session.getLine(r);" +
-                    "var line2 = session.getLine(r + 1);" +
-                    "if (line2 !== undefined) {" +
-                    "   var Range = ace.require('ace/range').Range;" +
-                    "   var joined = line1 + ' ' + line2.trim();" +
-                    "   session.replace(new Range(r, 0, r + 1, line2.length), joined);" +
-                    "   editor.moveCursorTo(r, joined.length);" +
-                    "}";
-                runEditorCommand(joinScript);
-                AppToast.showInfo(EditorActivity.this, "Join!");
+                // 1. Show the loader instantly
+                AppLoader.show(EditorActivity.this, "Fetching details...");
+                
+                // 2. Delay for 300ms to let the loader animate, then show the dialog
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        // 3. Gather the data
+                        String fileName = (currentFile != null ? currentFile.getName() : "No file open");
+                        String filePath = (currentFile != null ? currentFile.getAbsolutePath() : "N/A");
+                        int tabCount = tabContainer.getChildCount();
+                        String ext = "N/A";
+                        
+                        if (currentFile != null && currentFile.getName().contains(".")) {
+                            ext = currentFile.getName().substring(currentFile.getName().lastIndexOf(".") + 1).toUpperCase();
+                        }
+                        
+                        String details = 
+                            "Name:\n" + fileName + "\n\n" +
+                            "Type:\n" + ext + " File\n\n" +
+                            "Lines:\n" + totalDocumentLines + "\n\n" +
+                            "Open Tabs:\n" + tabCount + "\n\n" +
+                            "Path:\n" + filePath;
+
+                        // 4. Hide the loader
+                        AppLoader.hide();
+                        
+                        // 5. Show your custom dialog
+                        AppDialog.show(
+                            EditorActivity.this, 
+                            "File Details", 
+                            details, 
+                            "OK", 
+                            "", 
+                            null, 
+                            null
+                        );
+                    }
+                }, 300); // 300 milliseconds
                 
             } else if ("com.kenzglobe.debugmate.ACTION_EXPAND_LINE".equals(action)) {
                 // L: Expand Selection to Line
@@ -232,6 +253,65 @@ public class EditorActivity extends Activity {
             } else if ("com.kenzglobe.debugmate.ACTION_SELECT_WORD".equals(action)) {
                 // W: Select Word
                 runEditorCommand("editor.focus(); editor.selection.selectWord();");
+            } else if ("com.kenzglobe.debugmate.ACTION_CTRL_1".equals(action)) {
+                String fileName = (currentFile != null ? currentFile.getName() : "No file open");
+                String filePath = (currentFile != null ? currentFile.getAbsolutePath() : "N/A");
+                int tabCount = tabContainer.getChildCount();
+                String ext = (currentFile != null ? currentFile.getName().substring(currentFile.getName().lastIndexOf(".") + 1) : "N/A");
+                
+                String details = 
+                    "Name:\n" + fileName + "\n\n" +
+                    "Type:\n" + ext.toUpperCase() + " File\n\n" +
+                    "Lines:\n" + totalDocumentLines + "\n\n" +
+                    "Open Tabs:\n" + tabCount + "\n\n" +
+                    "Path:\n" + filePath;
+
+                // Using your custom AppDialog!
+                AppDialog.show(
+                    EditorActivity.this, 
+                    "File Details", 
+                    details, 
+                    "OK", 
+                    "", 
+                    null, 
+                    null
+                );
+                
+            } else if ("com.kenzglobe.debugmate.ACTION_CTRL_2".equals(action)) {
+                showPanel("search");
+                editorDrawer.openDrawer(Gravity.LEFT);
+                
+            } else if ("com.kenzglobe.debugmate.ACTION_CTRL_3".equals(action)) {
+                showPanel("git");
+                editorDrawer.openDrawer(Gravity.LEFT);
+                
+            } else if ("com.kenzglobe.debugmate.ACTION_CTRL_4".equals(action)) {
+                showPanel("run");
+                editorDrawer.openDrawer(Gravity.LEFT);
+                
+            } else if ("com.kenzglobe.debugmate.ACTION_CTRL_5".equals(action)) {
+                showPanel("accounts");
+                updateAccountsUI();
+                editorDrawer.openDrawer(Gravity.LEFT);
+                
+            } else if ("com.kenzglobe.debugmate.ACTION_CTRL_6".equals(action)) {
+                runEditorCommand("editor.focus(); editor.navigateFileStart();");
+                
+            } else if ("com.kenzglobe.debugmate.ACTION_CTRL_7".equals(action)) {
+                runEditorCommand("editor.focus(); editor.navigateFileEnd();");
+                
+            } else if ("com.kenzglobe.debugmate.ACTION_CTRL_8".equals(action)) {
+                changeEditorFontSize(-1);
+                AppToast.showInfo(EditorActivity.this, currentEditorFontSize + "px");
+                
+            } else if ("com.kenzglobe.debugmate.ACTION_CTRL_9".equals(action)) {
+                changeEditorFontSize(1);
+                AppToast.showInfo(EditorActivity.this, currentEditorFontSize + "px");
+
+            } else if ("com.kenzglobe.debugmate.ACTION_CTRL_0".equals(action)) {
+                if (currentFile != null) {
+                    closeTab(currentFile.getAbsolutePath());
+                }
             }
         }
     };
@@ -286,11 +366,6 @@ public class EditorActivity extends Activity {
         colorHexText = findViewById(R.id.color_hex_text);
         btnInsertColor = findViewById(R.id.btn_insert_color);
         btnClosePalette = findViewById(R.id.btn_close_palette);
-        reduceFontSize = findViewById(R.id.reduce_font_size);
-        increaseFontSize = findViewById(R.id.increase_font_size);
-        currentFontSize = findViewById(R.id.current_font_size);
-        gotoLineInput = findViewById(R.id.goto_line_input);
-        btnGoToLine = findViewById(R.id.btn_goto_line);
         
         // --- NEW: Initialize Activity Bar Views ---
         sideBarHeader = findViewById(R.id.sidebar_header);
@@ -308,7 +383,6 @@ public class EditorActivity extends Activity {
         navRunIc = findViewById(R.id.nav_run_ic);
         navAccounts = findViewById(R.id.nav_accounts);
         navAccountsIc = findViewById(R.id.nav_accounts_ic);
-        bottomPanel = findViewById(R.id.bottom_panel);
         
         gitFileList = findViewById(R.id.git_file_list);
         btnGitStatus = findViewById(R.id.btn_git_status);
@@ -343,13 +417,6 @@ public class EditorActivity extends Activity {
         createFolder.setText("\uf65e");
         createFile.setTypeface(solidFont);
         createFile.setText("\uf067");
-        reduceFontSize.setTypeface(solidFont);
-        reduceFontSize.setText("\uf068");
-        increaseFontSize.setTypeface(solidFont);
-        increaseFontSize.setText("\uf067");
-        currentFontSize.setText(currentEditorFontSize + "px");
-        gotoLineInput.setTypeface(appFont);
-        gotoLineInput.setHint("1 - 0");
         
         panelSearch = findViewById(R.id.panel_search);
         searchInput = findViewById(R.id.search_input);
@@ -553,28 +620,6 @@ public class EditorActivity extends Activity {
             }
         });
         // ------------------------------------------
-
-        reduceFontSize.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (currentEditorFontSize > 8) {
-                    currentEditorFontSize--;
-                    currentFontSize.setText(currentEditorFontSize + "px");
-                    updateEditorFontSize();
-                }
-            }
-        });
-
-        increaseFontSize.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (currentEditorFontSize < 32) {
-                    currentEditorFontSize++;
-                    currentFontSize.setText(currentEditorFontSize + "px");
-                    updateEditorFontSize();
-                }
-            }
-        });
             
         treeUpBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -585,27 +630,6 @@ public class EditorActivity extends Activity {
                     }
                 } else {
                     AppToast.showInfo(EditorActivity.this, "Not arrow icon!!");
-                }
-            }
-        });
-        
-        btnGoToLine.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String input = gotoLineInput.getText().toString().trim();
-                if (!input.isEmpty()) {
-                    try {
-                        int line = Integer.parseInt(input);
-                        if (line > 0) {
-                            goToLine(line);
-                            gotoLineInput.setText(""); 
-                            editorDrawer.closeDrawer(Gravity.LEFT); 
-                        } else {
-                            AppToast.showInfo(EditorActivity.this, "Line must be greater than 0");
-                        }
-                    } catch (NumberFormatException e) {
-                        AppToast.showError(EditorActivity.this, "Invalid number");
-                    }
                 }
             }
         });
@@ -1048,40 +1072,34 @@ public class EditorActivity extends Activity {
         
         if (panelName.equals("menu")) {
             sideBarHeader.setVisibility(View.GONE);
-            bottomPanel.setVisibility(View.GONE);
             activityBarLayout.setVisibility(View.VISIBLE);
             dropActivityBarBtn.setVisibility(View.GONE);
         } else if (panelName.equals("explorer")) {
             sideBarHeader.setVisibility(View.VISIBLE);
-            bottomPanel.setVisibility(View.VISIBLE);
             if (treeCurrentDir != null) treeRootName.setText(treeCurrentDir.getName());
             treeUpBtn.setText("\uf062");
             panelExplorer.setVisibility(View.VISIBLE);
             dropActivityBarBtn.setVisibility(View.VISIBLE);
         } else if (panelName.equals("git")) {
             sideBarHeader.setVisibility(View.VISIBLE);
-            bottomPanel.setVisibility(View.GONE);
             treeRootName.setText("Source Control");
             treeUpBtn.setText("\uf126");
             panelSourceControl.setVisibility(View.VISIBLE);
             dropActivityBarBtn.setVisibility(View.VISIBLE);
         } else if (panelName.equals("search")) {
             sideBarHeader.setVisibility(View.VISIBLE);
-            bottomPanel.setVisibility(View.GONE);
             treeRootName.setText("Search");
             treeUpBtn.setText("\uf002");
             panelSearch.setVisibility(View.VISIBLE);
             dropActivityBarBtn.setVisibility(View.VISIBLE);
         } else if (panelName.equals("run")) {
             sideBarHeader.setVisibility(View.VISIBLE);
-            bottomPanel.setVisibility(View.GONE);
             treeRootName.setText("Run and Debug");
             treeUpBtn.setText("\uf04b");
             panelRunAndDebug.setVisibility(View.VISIBLE);
             dropActivityBarBtn.setVisibility(View.VISIBLE);
         } else if (panelName.equals("accounts")) {
             sideBarHeader.setVisibility(View.VISIBLE);
-            bottomPanel.setVisibility(View.GONE);
             treeRootName.setText("Accounts");
             treeUpBtn.setText("\uf007");
             panelAccounts.setVisibility(View.VISIBLE);
@@ -1221,14 +1239,7 @@ public class EditorActivity extends Activity {
         
         @JavascriptInterface
         public void updateLineCount(final int count) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (gotoLineInput != null) {
-                        gotoLineInput.setHint("1 - " + count);
-                    }
-                }
-            });
+            totalDocumentLines = count;
         }
     }
     
@@ -1237,7 +1248,7 @@ public class EditorActivity extends Activity {
         treeCurrentDir = dir;
         treeRootName.setText(dir.getName());
         treeFiles.clear();
-
+        
         File[] files = dir.listFiles();
         if (files != null) {
             java.util.Arrays.sort(files, new java.util.Comparator<File>() {
@@ -1252,7 +1263,7 @@ public class EditorActivity extends Activity {
                 treeFiles.add(f);
             }
         }
-
+        
         treeAdapter = new EditorTreeAdapter(this, treeFiles, currentFile);
         treeList.setAdapter(treeAdapter);
     }
@@ -1295,6 +1306,17 @@ public class EditorActivity extends Activity {
             codeEditorWebView.evaluateJavascript("setEditorFontSize(" + currentEditorFontSize + ");", null);
         }
     }
+    
+    private void changeEditorFontSize(int delta) {
+        currentEditorFontSize += delta;
+        if (currentEditorFontSize < 8) currentEditorFontSize = 8;
+        if (currentEditorFontSize > 32) currentEditorFontSize = 32;
+        
+        if (currentFontSize != null) {
+            currentFontSize.setText(currentEditorFontSize + "px");
+        }
+        updateEditorFontSize();
+    }
 
     private void loadFile(File file) {
         if (file == null || !file.exists() || !file.isFile()) {
@@ -1324,7 +1346,9 @@ public class EditorActivity extends Activity {
             if (dotIndex != -1 && dotIndex < name.length() - 1) {
                 ext = name.substring(dotIndex + 1).toLowerCase(java.util.Locale.ROOT);
             }
-
+            
+            getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).edit().putString("last_file_ext", ext).apply();
+            
             pendingCode = text.toString();
             pendingExtension = ext;
 
@@ -1554,6 +1578,8 @@ public class EditorActivity extends Activity {
         super.onResume();
         
         android.content.IntentFilter filter = new android.content.IntentFilter();
+        
+        // Letters
         filter.addAction("com.kenzglobe.debugmate.ACTION_FIND");           // F
         filter.addAction("com.kenzglobe.debugmate.ACTION_REPLACE");        // H
         filter.addAction("com.kenzglobe.debugmate.ACTION_SAVE");           // S
@@ -1566,11 +1592,23 @@ public class EditorActivity extends Activity {
         filter.addAction("com.kenzglobe.debugmate.ACTION_FOLD");           // M
         filter.addAction("com.kenzglobe.debugmate.ACTION_NEW_FILE");       // N
         filter.addAction("com.kenzglobe.debugmate.ACTION_OPEN_FILE");      // O
-        filter.addAction("com.kenzglobe.debugmate.ACTION_TOGGLE_COMMENT");   // Q
+        filter.addAction("com.kenzglobe.debugmate.ACTION_TOGGLE_COMMENT"); // Q
         filter.addAction("com.kenzglobe.debugmate.ACTION_RELOAD");         // R
-        filter.addAction("com.kenzglobe.debugmate.ACTION_DUPLICATE");         // T
+        filter.addAction("com.kenzglobe.debugmate.ACTION_DUPLICATE");      // T
         filter.addAction("com.kenzglobe.debugmate.ACTION_UPPERCASE");      // U
         filter.addAction("com.kenzglobe.debugmate.ACTION_SELECT_WORD");    // W
+        
+        // Numbers
+        filter.addAction("com.kenzglobe.debugmate.ACTION_CTRL_0");         // 0
+        filter.addAction("com.kenzglobe.debugmate.ACTION_CTRL_1");         // 1
+        filter.addAction("com.kenzglobe.debugmate.ACTION_CTRL_2");         // 2
+        filter.addAction("com.kenzglobe.debugmate.ACTION_CTRL_3");         // 3
+        filter.addAction("com.kenzglobe.debugmate.ACTION_CTRL_4");         // 4
+        filter.addAction("com.kenzglobe.debugmate.ACTION_CTRL_5");         // 5
+        filter.addAction("com.kenzglobe.debugmate.ACTION_CTRL_6");         // 6
+        filter.addAction("com.kenzglobe.debugmate.ACTION_CTRL_7");         // 7
+        filter.addAction("com.kenzglobe.debugmate.ACTION_CTRL_8");         // 8
+        filter.addAction("com.kenzglobe.debugmate.ACTION_CTRL_9");         // 9
         
         registerReceiver(editorCommandReceiver, filter);
         

@@ -16,7 +16,7 @@
         android:textSize="18sp"
         android:gravity="center" />
         
-    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#DDDDDD" />
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#888888" />
 
     <!-- Input Field -->
     <com.kenzglobe.debugmate.AppEditText
@@ -32,7 +32,7 @@
         android:background="@null"
         android:padding="10dp" />
         
-    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#DDDDDD" />
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#888888" />
 
     <!-- Buttons -->
     <LinearLayout
