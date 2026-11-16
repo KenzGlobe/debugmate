@@ -43,11 +43,13 @@ public class MainActivity extends Activity {
     private ListView fileListView; 
     private View popupDimView;
     private ArrayList<FileItem> fileList;
+    private ArrayList<android.support.v4.provider.DocumentFile> safHistory = new ArrayList<>();
     private FileListAdapter adapter;
     private boolean isSelectionMode = false;
     private DrawerLayout drawerLayout;
     private File currentDirectory = null;
     private String startDirectoryPath = null;
+    private String savedSafUri = null;
     private long backPressedTime = 0;
     
     private FrameLayout startUpLayout,
@@ -194,6 +196,7 @@ public class MainActivity extends Activity {
         createFolderBtn = findViewById(R.id.create_folder_btn);
         createFileBtn = findViewById(R.id.create_file_btn);
         drawerLayout = findViewById(R.id.drawer_layout);
+        savedSafUri = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).getString("saved_saf_uri", null);
         
         storage = findViewById(R.id.storage);
         shell = findViewById(R.id.shell);
@@ -419,15 +422,16 @@ public class MainActivity extends Activity {
             sideBarBtn.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (sideBarBtn.getText().toString().equals("\uf0c9")) {
+                    String icon = sideBarBtn.getText().toString();
+                    if (icon.equals("\uf0c9")) { // Hamburger
                         startUpLayout.setVisibility(View.GONE);
                         workspaceBtn.setVisibility(View.GONE);
                         drawerLayout.openDrawer(Gravity.LEFT);
-                    } else if (sideBarBtn.getText().toString().equals("\uf00d")) {
+                    } else if (icon.equals("\uf00d")) { // X (Selection mode)
                         exitSelectionMode();
                         workspaceBtn.setVisibility(View.GONE);
-                    } else {
-                        parentFolderNavigation(currentDirectory);
+                    } else { // Back Arrow
+                        handleBackNavigation();
                     }
                 }
             });
@@ -495,16 +499,19 @@ public class MainActivity extends Activity {
                 public void onClick(View v) {
                     drawerLayout.closeDrawer(Gravity.LEFT);
                     
-                    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
-                        AppToast.showSuccess(MainActivity.this, "Storage picker requires Android 5.0 or later.");
-                        return;
+                    if (savedSafUri != null) {
+                        // Load the SAF directory into MainActivity
+                        loadSafDirectory(Uri.parse(savedSafUri));
+                    } else {
+                        // Launch the picker
+                        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
+                            AppToast.showSuccess(MainActivity.this, "Storage picker requires Android 5.0 or later.");
+                            return;
+                        }
+                        
+                        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                        startActivityForResult(intent, REQUEST_SAF_DIRECTORY);
                     }
-
-                    Intent intent = new Intent(
-                            Intent.ACTION_OPEN_DOCUMENT_TREE
-                    );
-
-                    startActivityForResult(intent, REQUEST_SAF_DIRECTORY);
                 }
             });
         }
@@ -903,6 +910,42 @@ public class MainActivity extends Activity {
                     return;
                 }
                 
+                // --- SAF HANDLING ---
+                if (item.isSaf) {
+                    if (item.isDir) {
+                        safHistory.add(item.docFile);
+                        loadSafDirectory(item.docFile);
+                    } else {
+                        String safUriStr = item.docFile.getUri().toString();
+                        
+                        // Save to recent_files (Tab history)
+                        android.content.SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                        String recentStr = prefs.getString("recent_files", "");
+                        ArrayList<String> recentList = new ArrayList<>();
+                        
+                        if (!recentStr.isEmpty()) {
+                            String[] arr = recentStr.split("\n");
+                            for (String s : arr) recentList.add(s);
+                        }
+                        
+                        while (recentList.contains(safUriStr)) recentList.remove(safUriStr);
+                        recentList.add(0, safUriStr);
+                        while (recentList.size() > 20) recentList.remove(recentList.size() - 1);
+                        
+                        StringBuilder sb = new StringBuilder();
+                        for (String s : recentList) sb.append(s).append("\n");
+                        prefs.edit().putString("recent_files", sb.toString().trim()).apply();
+
+                        // Open Editor
+                        Intent intent = new Intent(MainActivity.this, EditorActivity.class);
+                        intent.putExtra("saf_uri", safUriStr);
+                        intent.putExtra("saf_name", item.name);
+                        startActivity(intent);
+                    }
+                    return;
+                }
+                // --------------------
+                
                 if (item.isDir) {
                     loadDirectory(item.file);
                 } else {
@@ -1005,6 +1048,56 @@ public class MainActivity extends Activity {
             settings.setVisibility(View.GONE);
             currentDirectory = Environment.getExternalStorageDirectory();
             loadDirectory(currentDirectory);
+        }
+    }
+    
+    private void handleBackNavigation() {
+        if (isSelectionMode) {
+            exitSelectionMode();
+            return;
+        }
+        
+        if (isPickerMode) {
+            if (currentDirectory == null || currentDirectory.getAbsolutePath().equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
+                setResult(RESULT_CANCELED);
+                finish();
+            } else {
+                parentFolderNavigation(currentDirectory);
+            }
+            return;
+        }
+    
+        // --- SAF NAVIGATION ---
+        if (currentDirectory == null && savedSafUri != null && !appName.getText().toString().equals("DebugMate")) {
+            if (safHistory.size() > 1) {
+                // 1. Remove the current folder
+                safHistory.remove(safHistory.size() - 1);
+                
+                // 2. Get the previous folder (DocumentFile object)
+                android.support.v4.provider.DocumentFile previousDoc = safHistory.get(safHistory.size() - 1);
+                
+                // 3. Load it directly — no more fromSingleUri or fromTreeUri!
+                loadSafDirectory(previousDoc);
+            } else {
+                // Go back to Internal Storage
+                startDirectoryPath = null;
+                currentDirectory = Environment.getExternalStorageDirectory();
+                safHistory.clear();
+                loadDirectory(currentDirectory);
+            }
+            return;
+        }
+    
+        // --- NORMAL FILE NAVIGATION ---
+        if (currentDirectory != null) {
+            parentFolderNavigation(currentDirectory);
+        } else {
+            if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                super.onBackPressed();
+            } else {
+                AppToast.showSuccess(MainActivity.this, "Press back again to exit");
+            }
+            backPressedTime = System.currentTimeMillis();
         }
     }
     
@@ -1385,6 +1478,88 @@ public class MainActivity extends Activity {
         }
     }
     
+    private void loadSafDirectory(Uri treeUri) {
+        android.support.v4.provider.DocumentFile rootDoc = android.support.v4.provider.DocumentFile.fromTreeUri(this, treeUri);
+        if (rootDoc != null) {
+            safHistory.clear();
+            safHistory.add(rootDoc); // Store the DocumentFile directly
+            loadSafDirectory(rootDoc);
+        }
+    }
+    
+    private void loadSafDirectory(final android.support.v4.provider.DocumentFile rootDoc) {
+        if (rootDoc == null || !rootDoc.isDirectory()) {
+            AppToast.showError(MainActivity.this, "Invalid folder.");
+            return;
+        }
+    
+        currentDirectory = null; // Clear normal directory
+        appName.setText(rootDoc.getName());
+        
+        // Change Icon based on history depth
+        if (safHistory.size() > 1) {
+            sideBarBtn.setText("\uf060"); // Back arrow
+        } else {
+            sideBarBtn.setText("\uf0c9"); // Hamburger menu
+        }
+        
+        workspaceBtn.setVisibility(View.VISIBLE);
+        welcomeMessage.setVisibility(View.GONE);
+        fileListView.setVisibility(View.GONE);
+        emptyFolderLayout.setVisibility(View.GONE);
+        
+        AppLoader.show(MainActivity.this, "Loading folder...");
+    
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final ArrayList<FileItem> tempList = new ArrayList<>();
+                android.support.v4.provider.DocumentFile[] files = rootDoc.listFiles();
+    
+                if (files != null) {
+                    // 1. Sort in background
+                    java.util.Arrays.sort(files, new java.util.Comparator<android.support.v4.provider.DocumentFile>() {
+                        @Override
+                        public int compare(android.support.v4.provider.DocumentFile f1, android.support.v4.provider.DocumentFile f2) {
+                            if (f1.isDirectory() && !f2.isDirectory()) return -1;
+                            if (!f1.isDirectory() && f2.isDirectory()) return 1;
+                            String n1 = f1.getName() != null ? f1.getName() : "";
+                            String n2 = f2.getName() != null ? f2.getName() : "";
+                            return n1.compareToIgnoreCase(n2);
+                        }
+                    });
+    
+                    // 2. Fetch data in background
+                    for (android.support.v4.provider.DocumentFile f : files) {
+                        String fileName = f.getName();
+                        if (fileName != null && !fileName.startsWith(".")) {
+                            boolean isDir = f.isDirectory();
+                            long size = isDir ? 0 : f.length();
+                            tempList.add(new FileItem(f, fileName, isDir, size));
+                        }
+                    }
+                }
+    
+                // 3. Update UI instantly
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        AppLoader.hide();
+                        fileList.clear();
+                        fileList.addAll(tempList);
+                        adapter.notifyDataSetChanged();
+                        
+                        if (fileList.isEmpty()) {
+                            emptyFolderLayout.setVisibility(View.VISIBLE);
+                        } else {
+                            fileListView.setVisibility(View.VISIBLE);
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+    
     // DIALOG HELPERS
     private void showCreateFolderDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -1717,38 +1892,26 @@ public class MainActivity extends Activity {
     }
     
     @Override
-    protected void onActivityResult(
-            int requestCode,
-            int resultCode,
-            Intent data) {
-    
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
     
-        if (requestCode == REQUEST_SAF_DIRECTORY
-                && resultCode == RESULT_OK
-                && data != null) {
-    
+        if (requestCode == REQUEST_SAF_DIRECTORY && resultCode == RESULT_OK && data != null) {
             Uri treeUri = data.getData();
+            if (treeUri == null) return;
     
-            if (treeUri == null) {
-                AppToast.showSuccess(MainActivity.this, "No directory was selected.");
-                return;
-            }
-    
-            final int takeFlags = data.getFlags()
-                    & (Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-    
+            final int takeFlags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             try {
-                getContentResolver().takePersistableUriPermission(
-                        treeUri,
-                        takeFlags
-                );
-    
-                AppToast.showSuccess(MainActivity.this, "Storage access granted.");
+                getContentResolver().takePersistableUriPermission(treeUri, takeFlags);
+                
+                // Save the URI permanently!
+                savedSafUri = treeUri.toString();
+                getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).edit().putString("saved_saf_uri", savedSafUri).apply();
+                
+                // Load the directory
+                loadSafDirectory(treeUri);
     
             } catch (SecurityException e) {
-                    AppToast.showSuccess(MainActivity.this, "Could not retain storage access.");
+                AppToast.showError(MainActivity.this, "Could not retain storage access.");
             }
         }
     }
@@ -1764,35 +1927,10 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (isSelectionMode) {
-            exitSelectionMode();
-            return;
-        }
-        
-        if (isPickerMode) {
-            if (currentDirectory == null || currentDirectory.getAbsolutePath().equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
-                setResult(RESULT_CANCELED);
-                finish();
-            } else {
-                parentFolderNavigation(currentDirectory);
-            }
-            return;
-        }
-    
         if (drawerLayout.isDrawerOpen(Gravity.LEFT)) {
             drawerLayout.closeDrawer(Gravity.LEFT);
             return;
         }
-    
-        if (currentDirectory != null) {
-            parentFolderNavigation(currentDirectory);
-        } else {
-            if (backPressedTime + 2000 > System.currentTimeMillis()) {
-                super.onBackPressed();
-            } else {
-                AppToast.showSuccess(MainActivity.this, "Press back again to exit");
-            }
-            backPressedTime = System.currentTimeMillis();
-        }
+        handleBackNavigation();
     }
 }

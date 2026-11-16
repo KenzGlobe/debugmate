@@ -14,6 +14,7 @@ import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 import android.widget.AdapterView;
 import android.widget.*;
+import android.net.*;
 import org.json.JSONArray;
 import java.io.*;
 import java.util.ArrayList;
@@ -55,6 +56,8 @@ public class EditorActivity extends Activity {
     private boolean editorReady = false;
     private String pendingCode = null;
     private String pendingExtension = "text";
+    private String currentSafUri = null;
+    private String currentSafName = null; 
     private int currentEditorFontSize;
     private int pendingJumpToLine = -1;
     private int totalDocumentLines = 0;
@@ -174,45 +177,20 @@ public class EditorActivity extends Activity {
                 runActiveFile();
                 
             } else if ("com.kenzglobe.debugmate.ACTION_JOIN_LINES".equals(action)) {
-                // 1. Show the loader instantly
-                AppLoader.show(EditorActivity.this, "Fetching details...");
-                
-                // 2. Delay for 300ms to let the loader animate, then show the dialog
-                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        // 3. Gather the data
-                        String fileName = (currentFile != null ? currentFile.getName() : "No file open");
-                        String filePath = (currentFile != null ? currentFile.getAbsolutePath() : "N/A");
-                        int tabCount = tabContainer.getChildCount();
-                        String ext = "N/A";
-                        
-                        if (currentFile != null && currentFile.getName().contains(".")) {
-                            ext = currentFile.getName().substring(currentFile.getName().lastIndexOf(".") + 1).toUpperCase();
-                        }
-                        
-                        String details = 
-                            "Name:\n" + fileName + "\n\n" +
-                            "Type:\n" + ext + " File\n\n" +
-                            "Lines:\n" + totalDocumentLines + "\n\n" +
-                            "Open Tabs:\n" + tabCount + "\n\n" +
-                            "Path:\n" + filePath;
-
-                        // 4. Hide the loader
-                        AppLoader.hide();
-                        
-                        // 5. Show your custom dialog
-                        AppDialog.show(
-                            EditorActivity.this, 
-                            "File Details", 
-                            details, 
-                            "OK", 
-                            "", 
-                            null, 
-                            null
-                        );
-                    }
-                }, 300); // 300 milliseconds
+                // J: Join lines
+                String joinScript = 
+                    "editor.focus();" +
+                    "var r = editor.getCursorPosition().row;" +
+                    "var session = editor.session;" +
+                    "var line1 = session.getLine(r);" +
+                    "var line2 = session.getLine(r + 1);" +
+                    "if (line2 !== undefined) {" +
+                    "   var Range = ace.require('ace/range').Range;" +
+                    "   var joined = line1 + ' ' + line2.trim();" +
+                    "   session.replace(new Range(r, 0, r + 1, line2.length), joined);" +
+                    "   editor.moveCursorTo(r, joined.length);" +
+                    "}";
+                runEditorCommand(joinScript);
                 
             } else if ("com.kenzglobe.debugmate.ACTION_EXPAND_LINE".equals(action)) {
                 // L: Expand Selection to Line
@@ -236,7 +214,7 @@ public class EditorActivity extends Activity {
                 runEditorCommand("editor.focus(); editor.toggleCommentLines();");
                 
             } else if ("com.kenzglobe.debugmate.ACTION_RELOAD".equals(action)) {
-                // R: Run Again
+                // R: File Reload
                 if (currentFile != null) {
                     loadFile(currentFile);
                     AppToast.showInfo(EditorActivity.this, "File Reloaded");
@@ -254,29 +232,59 @@ public class EditorActivity extends Activity {
                 // W: Select Word
                 runEditorCommand("editor.focus(); editor.selection.selectWord();");
             } else if ("com.kenzglobe.debugmate.ACTION_CTRL_1".equals(action)) {
-                String fileName = (currentFile != null ? currentFile.getName() : "No file open");
-                String filePath = (currentFile != null ? currentFile.getAbsolutePath() : "N/A");
-                int tabCount = tabContainer.getChildCount();
-                String ext = (currentFile != null ? currentFile.getName().substring(currentFile.getName().lastIndexOf(".") + 1) : "N/A");
+                // 1. Show the loader instantly
+                AppLoader.show(EditorActivity.this, "Fetching details...");
                 
-                String details = 
-                    "Name:\n" + fileName + "\n\n" +
-                    "Type:\n" + ext.toUpperCase() + " File\n\n" +
-                    "Lines:\n" + totalDocumentLines + "\n\n" +
-                    "Open Tabs:\n" + tabCount + "\n\n" +
-                    "Path:\n" + filePath;
+                // 2. Delay for 300ms to let the loader animate, then show the dialog
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        // 3. Gather the data
+                        String fileName = "No file open";
+                        String filePath = "N/A";
+                        String ext = "N/A";
+                        
+                        // Check SAF first
+                        if (currentSafUri != null) {
+                            fileName = currentSafName != null ? currentSafName : "Unknown SAF File";
+                            filePath = currentSafUri;
+                            if (fileName.contains(".")) {
+                                ext = fileName.substring(fileName.lastIndexOf(".") + 1).toUpperCase();
+                            }
+                        } 
+                        // Then check normal File
+                        else if (currentFile != null) {
+                            fileName = currentFile.getName();
+                            filePath = currentFile.getAbsolutePath();
+                            if (fileName.contains(".")) {
+                                ext = fileName.substring(fileName.lastIndexOf(".") + 1).toUpperCase();
+                            }
+                        }
 
-                // Using your custom AppDialog!
-                AppDialog.show(
-                    EditorActivity.this, 
-                    "File Details", 
-                    details, 
-                    "OK", 
-                    "", 
-                    null, 
-                    null
-                );
-                
+                        int tabCount = tabContainer.getChildCount();
+                        
+                        String details = 
+                            "Name:\n" + fileName + "\n\n" +
+                            "Type:\n" + ext + " File\n\n" +
+                            "Lines:\n" + totalDocumentLines + "\n\n" +
+                            "Open Tabs:\n" + tabCount + "\n\n" +
+                            "Path:\n" + filePath;
+
+                        // 4. Hide the loader
+                        AppLoader.hide();
+                        
+                        // 5. Show your custom dialog
+                        AppDialog.show(
+                            EditorActivity.this, 
+                            "File Details", 
+                            details, 
+                            "OK", 
+                            "", 
+                            null, 
+                            null
+                        );
+                    }
+                }, 300);
             } else if ("com.kenzglobe.debugmate.ACTION_CTRL_2".equals(action)) {
                 showPanel("search");
                 editorDrawer.openDrawer(Gravity.LEFT);
@@ -295,10 +303,10 @@ public class EditorActivity extends Activity {
                 editorDrawer.openDrawer(Gravity.LEFT);
                 
             } else if ("com.kenzglobe.debugmate.ACTION_CTRL_6".equals(action)) {
-                runEditorCommand("editor.focus(); editor.navigateFileStart();");
+                goToLine(1);
                 
             } else if ("com.kenzglobe.debugmate.ACTION_CTRL_7".equals(action)) {
-                runEditorCommand("editor.focus(); editor.navigateFileEnd();");
+                goToLine(totalDocumentLines);
                 
             } else if ("com.kenzglobe.debugmate.ACTION_CTRL_8".equals(action)) {
                 changeEditorFontSize(-1);
@@ -960,26 +968,33 @@ public class EditorActivity extends Activity {
 
         codeEditorWebView.loadUrl("file:///android_asset/www/editor.html");
 
-        String filePath = getIntent().getStringExtra("file_path");
-
-        if (filePath == null || filePath.isEmpty()) {
-            SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
-            String recentStr = prefs.getString("recent_files", "");
-            
-            if (!recentStr.isEmpty()) {
-                String[] paths = recentStr.split("\n");
-                for (String path : paths) {
-                    File f = new File(path);
-                    if (f.exists() && f.isFile()) {
-                        filePath = path;
-                        break;
+        String safUriStr = getIntent().getStringExtra("saf_uri");
+        String safNameStr = getIntent().getStringExtra("saf_name");
+        
+        if (safUriStr != null && safNameStr != null) {
+            loadSafFile(Uri.parse(safUriStr), safNameStr);
+        } else {
+            String filePath = getIntent().getStringExtra("file_path");
+    
+            if (filePath == null || filePath.isEmpty()) {
+                SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                String recentStr = prefs.getString("recent_files", "");
+                
+                if (!recentStr.isEmpty()) {
+                    String[] paths = recentStr.split("\n");
+                    for (String path : paths) {
+                        File f = new File(path);
+                        if (f.exists() && f.isFile()) {
+                            filePath = path;
+                            break;
+                        }
                     }
                 }
             }
-        }
-
-        if (filePath != null && !filePath.isEmpty()) {
-            loadFile(new File(filePath));
+    
+            if (filePath != null && !filePath.isEmpty()) {
+                loadFile(new File(filePath));
+            }
         }
 
         buildTabs();
@@ -988,6 +1003,57 @@ public class EditorActivity extends Activity {
             @Override
             public void onClick(View v) { finish(); }
         });
+    }
+    
+    private void loadSafFile(Uri uri, String name) {
+        currentSafUri = uri.toString();
+        currentSafName = name;
+        currentFile = null; // Ensure normal file is null
+    
+        fileNameView.setText(name);
+        fileNamePath.setText(uri.getPath());
+    
+        try {
+            InputStream is = getContentResolver().openInputStream(uri);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            StringBuilder text = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                text.append(line).append('\n');
+            }
+            reader.close();
+    
+            String ext = "";
+            if (name.contains(".")) {
+                ext = name.substring(name.lastIndexOf(".") + 1).toLowerCase();
+            }
+            
+            getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).edit().putString("last_file_ext", ext).apply();
+            
+            pendingCode = text.toString();
+            pendingExtension = ext;
+    
+            if (editorReady) {
+                sendCodeToEditor(pendingCode, pendingExtension);
+                pendingCode = null;
+            }
+            
+            // Set Run Button State
+            textRunActiveTitle.setText("Run " + name);
+            if (ext.equals("py")) {
+                textRunActiveSub.setText("Python Script");
+                iconRunActive.setTextColor(Color.parseColor("#3776AB"));
+            } else if (ext.equals("html") || ext.equals("css") || ext.equals("js")) {
+                textRunActiveSub.setText("Web Project");
+                iconRunActive.setTextColor(Color.parseColor("#3FB950"));
+            } else {
+                textRunActiveSub.setText("Unsupported format");
+                iconRunActive.setTextColor(Color.parseColor("#888888"));
+            }
+    
+        } catch (Exception e) {
+            AppToast.showError(EditorActivity.this, "Error reading SAF file: " + e.getMessage());
+        }
     }
 
     private void performSearch(final String query, final File dir) {
@@ -1323,6 +1389,9 @@ public class EditorActivity extends Activity {
             AppToast.showError(EditorActivity.this, "File not found.");
             return;
         }
+        
+        currentSafUri = null; 
+        currentSafName = null;
 
         currentFile = file;
 
@@ -1452,6 +1521,30 @@ public class EditorActivity extends Activity {
     }
 
     private void saveCurrentFile() {
+        if (currentSafUri != null) {
+            // We are saving a SAF file
+            codeEditorWebView.evaluateJavascript("getCode();", new android.webkit.ValueCallback<String>() {
+                @Override
+                public void onReceiveValue(String result) {
+                    try {
+                        if (result == null || "null".equals(result)) {
+                            throw new Exception("Editor returned no content.");
+                        }
+                        String cleanCode = new JSONArray("[" + result + "]").getString(0);
+                        
+                        OutputStream os = getContentResolver().openOutputStream(Uri.parse(currentSafUri));
+                        os.write(cleanCode.getBytes());
+                        os.close();
+                        
+                        AppToast.showSuccess(EditorActivity.this, "Saved SAF file successfully! ✔️");
+                    } catch (Exception e) {
+                        AppToast.showError(EditorActivity.this, "Error saving SAF: " + e.getMessage());
+                    }
+                }
+            });
+            return; // Exit early so it doesn't try to save a normal file
+        }
+        
         if (currentFile == null) {
             AppToast.showError(EditorActivity.this, "No file selected.");
             return;
@@ -1497,20 +1590,45 @@ public class EditorActivity extends Activity {
         String[] paths = recentStr.split("\n");
 
         for (final String path : paths) {
-            final File f = new File(path);
-            if (!f.exists() || !f.isFile()) continue;
+            if (path.isEmpty()) continue;
+
+            boolean isSaf = path.startsWith("content://");
+            String displayName = "";
+            boolean isValid = false;
+
+            if (isSaf) {
+                // Extract the readable name from the SAF URI
+                String decoded = android.net.Uri.decode(path);
+                if (decoded.contains("/")) {
+                    displayName = decoded.substring(decoded.lastIndexOf("/") + 1);
+                } else {
+                    displayName = "SAF File";
+                }
+                isValid = true; // We assume SAF files are valid
+            } else {
+                final File f = new File(path);
+                if (f.exists() && f.isFile()) {
+                    displayName = f.getName();
+                    isValid = true;
+                }
+            }
+
+            if (!isValid) continue;
 
             LinearLayout tabLayout = new LinearLayout(this);
             tabLayout.setOrientation(LinearLayout.HORIZONTAL);
             tabLayout.setGravity(Gravity.CENTER_VERTICAL);
             tabLayout.setPadding(24, 0, 9, 0);
 
-            if (currentFile != null && currentFile.getAbsolutePath().equals(f.getAbsolutePath())) {
+            // Highlight active tab
+            if (isSaf && currentSafUri != null && currentSafUri.equals(path)) {
+                tabLayout.setBackgroundResource(R.drawable.tab_active);
+            } else if (!isSaf && currentFile != null && currentFile.getAbsolutePath().equals(path)) {
                 tabLayout.setBackgroundResource(R.drawable.tab_active);
             }
 
             TextView tabName = new TextView(this);
-            tabName.setText(f.getName());
+            tabName.setText(displayName);
             tabName.setTextColor(Color.parseColor("#FFFFFF"));
             tabName.setTextSize(12);
             tabName.setTypeface(appFont);
@@ -1525,10 +1643,15 @@ public class EditorActivity extends Activity {
             tabLayout.addView(tabName);
             tabLayout.addView(btnClose);
 
+            final String finalDisplayName = displayName;
             tabLayout.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    loadFile(f);
+                    if (path.startsWith("content://")) {
+                        loadSafFile(Uri.parse(path), finalDisplayName);
+                    } else {
+                        loadFile(new File(path));
+                    }
                     buildTabs();
                 }
             });
@@ -1559,15 +1682,26 @@ public class EditorActivity extends Activity {
         for (String s : list) {
             sb.append(s).append("\n");
         }
-
         prefs.edit().putString("recent_files", sb.toString().trim()).apply();
 
-        if (currentFile != null && currentFile.getAbsolutePath().equals(path)) {
+        // If we just closed the currently active file
+        boolean closedActive = false;
+        if (currentSafUri != null && currentSafUri.equals(path)) closedActive = true;
+        if (currentFile != null && currentFile.getAbsolutePath().equals(path)) closedActive = true;
+
+        if (closedActive) {
             if (list.isEmpty()) {
                 finish();
                 return;
             } else {
-                loadFile(new File(list.get(0)));
+                String nextPath = list.get(0);
+                if (nextPath.startsWith("content://")) {
+                    String decoded = android.net.Uri.decode(nextPath);
+                    String name = decoded.substring(decoded.lastIndexOf("/") + 1);
+                    loadSafFile(Uri.parse(nextPath), name);
+                } else {
+                    loadFile(new File(nextPath));
+                }
             }
         }
         buildTabs();

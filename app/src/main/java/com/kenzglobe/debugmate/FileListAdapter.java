@@ -85,7 +85,9 @@ public class FileListAdapter extends ArrayAdapter<FileItem> {
             h.size.setTextColor(Color.parseColor("#8B5CF6"));
         } else {
             h.info.setText(item.ext.toUpperCase() + " file");
-            h.size.setText(formatSize(item.file.length()));
+            
+            long length = item.size; // Read from memory instantly!
+            h.size.setText(formatSize(length));
             
             Typeface iconFont = solidFont;
             String iconText = "\uf15b";

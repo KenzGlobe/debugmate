@@ -1,1 +1,27 @@
-/build
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/ gen/ build/ obj/ out/
+
+# Gradle files
+.gradle/
+build/
+local.properties
+
+# IDE files
+.idea/
+*.iml
+.DS_Store
+
+# AIDE specific
+*.log
