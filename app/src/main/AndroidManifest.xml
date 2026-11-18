@@ -27,7 +27,7 @@
         <!-- SPLASH SCREEN (The Launcher) -->
         <activity
             android:name=".SplashActivity"
-            android:theme="@android:style/Theme.NoTitleBar">
+            android:theme="@style/SplashTheme">
             
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

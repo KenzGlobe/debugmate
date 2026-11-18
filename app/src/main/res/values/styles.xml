@@ -7,6 +7,10 @@
         <item name="android:navigationBarColor">#1E1E1E</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
+    
+    <style name="SplashTheme" parent="@android:style/Theme.NoTitleBar">
+        <item name="android:windowBackground">#000000</item>
+    </style>
 
     <style name="MoreFileTasks">
         <item name="android:layout_width">match_parent</item>

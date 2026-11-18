@@ -16,13 +16,7 @@ import android.view.View;
 import android.view.Gravity;
 import android.view.View.OnClickListener;
 import android.support.v4.widget.DrawerLayout;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import java.io.*;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Arrays;
@@ -51,6 +45,11 @@ public class MainActivity extends Activity {
     private String startDirectoryPath = null;
     private String savedSafUri = null;
     private long backPressedTime = 0;
+    
+    // --- For Copy/Move ---
+    private ArrayList<FileItem> clipboardFiles = new ArrayList<>();
+    private boolean isCopyMode = false;
+    private boolean isMoveMode = false;
     
     private FrameLayout startUpLayout,
         tasksForFiles,
@@ -375,7 +374,11 @@ public class MainActivity extends Activity {
             fabAdd.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    startUpLayout.setVisibility(View.VISIBLE);
+                    if (isCopyMode || isMoveMode) {
+                        performPaste();
+                    } else {
+                        startUpLayout.setVisibility(View.VISIBLE);
+                    }
                 }
             });
         }
@@ -435,7 +438,7 @@ public class MainActivity extends Activity {
                     }
                 }
             });
-        }
+        }    
         
         if (workspaceBtn != null) {
             workspaceBtn.setOnClickListener(new OnClickListener() {
@@ -687,6 +690,56 @@ public class MainActivity extends Activity {
                     intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     startActivity(Intent.createChooser(intent, "Share files via"));
+                }
+            });
+        }
+        
+        if (filesCopyBtnLayout != null) {
+            filesCopyBtnLayout.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    clipboardFiles.clear();
+                    for (FileItem item : fileList) {
+                        if (item.isSelected) clipboardFiles.add(item);
+                    }
+                    if (clipboardFiles.isEmpty()) return;
+                    
+                    isCopyMode = true;
+                    isMoveMode = false;
+                    
+                    exitSelectionMode();
+                    fabAdd.setVisibility(View.VISIBLE);
+                    fabAdd.setTypeface(solidFont);
+                    fabAdd.setText("\uf0ea"); // Paste Icon
+                    
+                    showPasteNavigationDialog();
+                    
+                    AppToast.showInfo(MainActivity.this, "Copied " + clipboardFiles.size() + " item(s). Navigate and tap Paste.");
+                }
+            });
+        }
+        
+        if (filesCutBtnLayout != null) {
+            filesCutBtnLayout.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    clipboardFiles.clear();
+                    for (FileItem item : fileList) {
+                        if (item.isSelected) clipboardFiles.add(item);
+                    }
+                    if (clipboardFiles.isEmpty()) return;
+                    
+                    isCopyMode = false;
+                    isMoveMode = true;
+                    
+                    exitSelectionMode();
+                    fabAdd.setVisibility(View.VISIBLE);
+                    fabAdd.setTypeface(solidFont);
+                    fabAdd.setText("\uf0ea"); // Paste Icon
+                    
+                    showPasteNavigationDialog();
+                    
+                    AppToast.showInfo(MainActivity.this, "Cut " + clipboardFiles.size() + " item(s). Navigate and tap Paste.");
                 }
             });
         }
@@ -1082,6 +1135,285 @@ public class MainActivity extends Activity {
                 showWelcomeScreen();
             }
         }
+    }
+    
+    private void showPasteNavigationDialog() {
+        final android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.custom_dialog);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+    
+        TextView titleView = dialog.findViewById(R.id.dialog_title);
+        TextView messageView = dialog.findViewById(R.id.dialog_message);
+        android.widget.FrameLayout customContainer = dialog.findViewById(R.id.dialog_custom_view_container);
+        Button btnPositive = dialog.findViewById(R.id.dialog_btn_positive);
+        Button btnNegative = dialog.findViewById(R.id.dialog_btn_negative);
+    
+        titleView.setText("Move/Copy Destination");
+        messageView.setText("Choose a location to paste your " + clipboardFiles.size() + " item(s).");
+        
+        // Build the custom list of destinations
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        
+        String[] options = {"📂 Internal Storage", "📁 App Files", "💾 App Cache", "🔒 SAF Storage"};
+        
+        for (int i = 0; i < options.length; i++) {
+            TextView tv = new TextView(this);
+            tv.setText(options[i]);
+            tv.setTextColor(Color.WHITE);
+            tv.setTextSize(16);
+            tv.setPadding(32, 32, 32, 32);
+            tv.setBackgroundResource(android.R.drawable.list_selector_background);
+            
+            final int index = i;
+            tv.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                    
+                    if (index == 0) {
+                        startDirectoryPath = null;
+                        currentDirectory = Environment.getExternalStorageDirectory();
+                        loadDirectory(currentDirectory);
+                    } else if (index == 1) {
+                        startDirectoryPath = null;
+                        File appFilesDir = getExternalFilesDir(null);
+                        if (appFilesDir != null) {
+                            if (!appFilesDir.exists()) appFilesDir.mkdirs();
+                            currentDirectory = appFilesDir;
+                            loadDirectory(currentDirectory);
+                        }
+                    } else if (index == 2) {
+                        startDirectoryPath = null;
+                        File cacheDir = getCacheDir();
+                        if (cacheDir != null) {
+                            currentDirectory = cacheDir;
+                            loadDirectory(currentDirectory);
+                        }
+                    } else if (index == 3) {
+                        if (savedSafUri != null) {
+                            loadSafDirectory(Uri.parse(savedSafUri));
+                        } else {
+                            AppToast.showInfo(MainActivity.this, "No SAF folder selected yet.");
+                        }
+                    }
+                }
+            });
+            layout.addView(tv);
+            
+            // Add a small divider line
+            View divider = new View(this);
+            divider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 2));
+            divider.setBackgroundColor(Color.parseColor("#333333"));
+            layout.addView(divider);
+        }
+    
+        customContainer.setVisibility(View.VISIBLE);
+        customContainer.removeAllViews();
+        customContainer.addView(layout);
+    
+        btnPositive.setText("CANCEL COPY");
+        btnPositive.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                isCopyMode = false;
+                isMoveMode = false;
+                clipboardFiles.clear();
+                fabAdd.setText("\uf067"); // Reset to Plus
+                AppToast.showInfo(MainActivity.this, "Copy/Move cancelled.");
+            }
+        });
+    
+        btnNegative.setVisibility(View.GONE);
+    
+        dialog.show();
+    }
+    
+    private void performPaste() {
+        if (clipboardFiles.isEmpty()) return;
+        
+        AppLoader.show(this, "Processing...");
+        
+        // Determine Destination
+        final File destFileDir = currentDirectory;
+        final android.support.v4.provider.DocumentFile destSafDir = (currentDirectory == null && !safHistory.isEmpty()) ? safHistory.get(safHistory.size() - 1) : null;
+        
+        if (destFileDir == null && destSafDir == null) {
+            AppToast.showError(this, "Cannot paste here.");
+            AppLoader.hide();
+            return;
+        }
+    
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int successCount = 0;
+                try {
+                    for (FileItem item : clipboardFiles) {
+                        if (item.isSaf) {
+                            // SAF Source
+                            if (destFileDir != null) {
+                                successCount += copySafToFile(item.docFile, destFileDir) ? 1 : 0;
+                            } else if (destSafDir != null) {
+                                successCount += copySafToSaf(item.docFile, destSafDir) ? 1 : 0;
+                            }
+                        } else {
+                            // File Source
+                            if (destFileDir != null) {
+                                successCount += copyFileToFile(item.file, new File(destFileDir, item.name)) ? 1 : 0;
+                            } else if (destSafDir != null) {
+                                successCount += copyFileToSaf(item.file, destSafDir) ? 1 : 0;
+                            }
+                        }
+                        
+                        // If move mode, delete the original
+                        if (isMoveMode) {
+                            if (item.isSaf) item.docFile.delete();
+                            else deleteRecursive(item.file);
+                        }
+                    }
+                    
+                    final int finalSuccess = successCount;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            AppLoader.hide();
+                            AppDialog.show(MainActivity.this, "Pasted Successfully", "Successfully pasted " + finalSuccess + " item(s).", "OK", "", null, null);
+
+                            isCopyMode = false;
+                            isMoveMode = false;
+                            clipboardFiles.clear();
+                            
+                            // Reset FAB
+                            fabAdd.setText("\uf067"); // Plus Icon
+                            if (currentDirectory != null) loadDirectory(currentDirectory);
+                            else if (destSafDir != null) loadSafDirectory(destSafDir);
+                        }
+                    });
+                } catch (final Exception e) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            AppLoader.hide();
+                            AppDialog.show(MainActivity.this, "Paste Failed", "Error: " + e.getMessage(), "OK", "", null, null);
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+    
+    // --- Helper Stream Methods ---
+    
+    private boolean copyFileToFile(File src, File dest) {
+        try {
+            if (src.isDirectory()) {
+                if (!dest.exists()) dest.mkdirs();
+                File[] children = src.listFiles();
+                if (children != null) {
+                    for (File child : children) {
+                        copyFileToFile(child, new File(dest, child.getName()));
+                    }
+                }
+            } else {
+                FileInputStream in = new FileInputStream(src);
+                FileOutputStream out = new FileOutputStream(dest);
+                byte[] buffer = new byte[4096];
+                int len;
+                while ((len = in.read(buffer)) > 0) out.write(buffer, 0, len);
+                out.close();
+                in.close();
+            }
+            return true;
+        } catch (Exception e) { return false; }
+    }
+    
+    private boolean copyFileToSaf(File src, android.support.v4.provider.DocumentFile destDir) {
+        try {
+            android.support.v4.provider.DocumentFile newDoc;
+            
+            // Use the correct method based on type
+            if (src.isDirectory()) {
+                newDoc = destDir.createDirectory(src.getName());
+            } else {
+                newDoc = destDir.createFile("application/octet-stream", src.getName());
+            }
+            
+            if (newDoc == null) return false;
+
+            if (src.isDirectory()) {
+                File[] children = src.listFiles();
+                if (children != null) {
+                    for (File child : children) {
+                        copyFileToSaf(child, newDoc);
+                    }
+                }
+            } else {
+                InputStream in = new FileInputStream(src);
+                OutputStream out = getContentResolver().openOutputStream(newDoc.getUri());
+                byte[] buffer = new byte[4096];
+                int len;
+                while ((len = in.read(buffer)) > 0) out.write(buffer, 0, len);
+                out.close();
+                in.close();
+            }
+            return true;
+        } catch (Exception e) { return false; }
+    }
+    
+    private boolean copySafToFile(android.support.v4.provider.DocumentFile srcDoc, File destDir) {
+        try {
+            File dest = new File(destDir, srcDoc.getName());
+            if (srcDoc.isDirectory()) {
+                dest.mkdirs();
+                for (android.support.v4.provider.DocumentFile child : srcDoc.listFiles()) {
+                    copySafToFile(child, dest);
+                }
+            } else {
+                InputStream in = getContentResolver().openInputStream(srcDoc.getUri());
+                FileOutputStream out = new FileOutputStream(dest);
+                byte[] buffer = new byte[4096];
+                int len;
+                while ((len = in.read(buffer)) > 0) out.write(buffer, 0, len);
+                out.close();
+                in.close();
+            }
+            return true;
+        } catch (Exception e) { return false; }
+    }
+    
+    private boolean copySafToSaf(android.support.v4.provider.DocumentFile srcDoc, android.support.v4.provider.DocumentFile destDir) {
+        try {
+            android.support.v4.provider.DocumentFile newDoc;
+            
+            // Use the correct method based on type
+            if (srcDoc.isDirectory()) {
+                newDoc = destDir.createDirectory(srcDoc.getName());
+            } else {
+                newDoc = destDir.createFile("application/octet-stream", srcDoc.getName());
+            }
+
+            if (newDoc == null) return false;
+
+            if (srcDoc.isDirectory()) {
+                for (android.support.v4.provider.DocumentFile child : srcDoc.listFiles()) {
+                    copySafToSaf(child, newDoc);
+                }
+            } else {
+                InputStream in = getContentResolver().openInputStream(srcDoc.getUri());
+                OutputStream out = getContentResolver().openOutputStream(newDoc.getUri());
+                byte[] buffer = new byte[4096];
+                int len;
+                while ((len = in.read(buffer)) > 0) out.write(buffer, 0, len);
+                out.close();
+                in.close();
+            }
+            return true;
+        } catch (Exception e) { return false; }
     }
     
     private void handleBackNavigation() {
