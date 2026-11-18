@@ -32,7 +32,6 @@ public class TerminalActivity extends Activity {
     private ScrollView scrollView;
     private LinearLayout extraKeysLayout;
     
-    // --- FIX: Initialize with default values to prevent onCreate crash ---
     private int terminalFontSize = 14;
     private String terminalThemeColor = "#E6E6E6";
     
@@ -120,6 +119,8 @@ public class TerminalActivity extends Activity {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    boolean hapticEnter = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).getBoolean("terminal_haptic_enter", true);
+                    if (hapticEnter) v.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP);
                     submitCommand();
                     return true;
                 }
@@ -131,6 +132,8 @@ public class TerminalActivity extends Activity {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
                 if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+                    boolean hapticEnter = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).getBoolean("terminal_haptic_enter", true);
+                    if (hapticEnter) v.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP);
                     submitCommand();
                     return true;
                 }
@@ -369,6 +372,8 @@ public class TerminalActivity extends Activity {
                 tv.setTextSize(terminalFontSize);
                 tv.setTypeface(terminalFont);
                 
+                // Save the raw text so we can re-color it if the theme changes
+                tv.setTag(text);
                 tv.setText(parseAnsiColors(text));
                 
                 outputLayout.addView(tv);
@@ -389,7 +394,6 @@ public class TerminalActivity extends Activity {
         Matcher matcher = pattern.matcher(text);
         
         int lastEnd = 0;
-        // --- FIX: Ensure themeColor is not null ---
         int currentColor = Color.parseColor(terminalThemeColor != null ? terminalThemeColor : "#E6E6E6");
 
         while (matcher.find()) {
@@ -401,7 +405,6 @@ public class TerminalActivity extends Activity {
 
             String code = matcher.group(1);
             if (code.equals("0") || code.equals("00")) {
-                // Reset to the chosen theme color
                 currentColor = Color.parseColor(terminalThemeColor != null ? terminalThemeColor : "#E6E6E6");
             } else if (code.contains("34")) {
                 currentColor = Color.parseColor("#58A6FF");
@@ -432,19 +435,33 @@ public class TerminalActivity extends Activity {
     
     @Override
     protected void onResume() {
-        super.onResume(); // <--- FIX: super.onResume() goes here!
+        super.onResume();
         
         SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
-        terminalFontSize = prefs.getInt("terminal_font_size", 14);
-        boolean showKeys = prefs.getBoolean("terminal_extra_keys", true);
-        String theme = prefs.getString("terminal_theme", "classic");
+        
+        // 1. Keep Screen On
+        boolean keepScreenOn = prefs.getBoolean("terminal_keep_screen_on", false);
+        if (keepScreenOn) {
+            getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        } else {
+            getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
 
+        // 2. Font Size
+        terminalFontSize = prefs.getInt("terminal_font_size", 14);
+        input.setTextSize(terminalFontSize);
+        promptView.setTextSize(terminalFontSize);
+        
+        // 3. Extra Keys
+        boolean showKeys = prefs.getBoolean("terminal_extra_keys", true);
         if (showKeys) {
             extraKeysLayout.setVisibility(View.VISIBLE);
         } else {
             extraKeysLayout.setVisibility(View.GONE);
         }
 
+        // 4. Theme Color
+        String theme = prefs.getString("terminal_theme", "classic");
         if (theme.equals("hacker")) {
             terminalThemeColor = "#3FB950"; // Green
         } else if (theme.equals("cyberpunk")) {
@@ -453,13 +470,16 @@ public class TerminalActivity extends Activity {
             terminalThemeColor = "#E6E6E6"; // Classic Gray
         }
 
-        input.setTextSize(terminalFontSize);
-        promptView.setTextSize(terminalFontSize);
-        
+        // 5. Refresh existing output with new font size and theme color
         for (int i = 0; i < outputLayout.getChildCount(); i++) {
             View child = outputLayout.getChildAt(i);
             if (child instanceof TextView) {
-                ((TextView) child).setTextSize(terminalFontSize);
+                TextView tv = (TextView) child;
+                tv.setTextSize(terminalFontSize);
+                String rawText = (String) tv.getTag();
+                if (rawText != null) {
+                    tv.setText(parseAnsiColors(rawText));
+                }
             }
         }
     }

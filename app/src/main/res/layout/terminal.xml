@@ -147,6 +147,7 @@
                 android:textSize="14sp"
                 android:fontFamily="monospace"
                 android:inputType="text|textNoSuggestions"
+                android:textCursorDrawable="@drawable/cursor_white"
                 android:imeOptions="actionDone" />
 
             <!-- Send Button -->

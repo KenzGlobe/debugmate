@@ -11,8 +11,7 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import android.content.ClipboardManager;
-import android.content.ClipData;
+import android.content.*;
 import java.util.*;
 
 public class CodingKeyboardService extends InputMethodService implements KeyboardView.OnKeyboardActionListener {
@@ -492,7 +491,17 @@ public class CodingKeyboardService extends InputMethodService implements Keyboar
                 return;
 
             case 9:
-                ic.commitText("    ", 1);
+                SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                boolean softTabs = prefs.getBoolean("editor_soft_tabs", true);
+                
+                if (softTabs) {
+                    int tabSize = Integer.parseInt(prefs.getString("editor_tab_size", "4"));
+                    StringBuilder spaces = new StringBuilder();
+                    for (int i = 0; i < tabSize; i++) spaces.append(" ");
+                    ic.commitText(spaces.toString(), 1);
+                } else {
+                    ic.commitText("\t", 1); // Insert a real tab character
+                }
                 return;
 
             case KEY_COPY:

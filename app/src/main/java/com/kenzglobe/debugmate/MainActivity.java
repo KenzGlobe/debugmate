@@ -1049,6 +1049,39 @@ public class MainActivity extends Activity {
             currentDirectory = Environment.getExternalStorageDirectory();
             loadDirectory(currentDirectory);
         }
+        
+        // --- STARTUP BEHAVIOR LOGIC ---
+        if (!isPickerMode) {
+            int startupBehavior = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).getInt("startup_behavior", 0);
+            
+            if (startupBehavior == 1) {
+                // Load Last Opened Folder
+                SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                String lastType = prefs.getString("last_location_type", "normal");
+                String lastNormalFolder = prefs.getString("last_normal_folder", null);
+                
+                if (lastType.equals("saf") && savedSafUri != null) {
+                    loadSafDirectory(Uri.parse(savedSafUri));
+                } else if (lastType.equals("normal") && lastNormalFolder != null && new File(lastNormalFolder).exists()) {
+                    currentDirectory = new File(lastNormalFolder);
+                    loadDirectory(currentDirectory);
+                } else {
+                    showWelcomeScreen();
+                }
+                
+            } else if (startupBehavior == 2) {
+                // Open Projects Dashboard
+                startActivity(new Intent(MainActivity.this, ProjectListActivity.class));
+                
+            } else if (startupBehavior == 3) {
+                android.content.Intent intent = new android.content.Intent(MainActivity.this, EditorActivity.class);
+                startActivity(intent);
+                
+            } else {
+                // 0: Welcome Screen (default behavior)
+                showWelcomeScreen();
+            }
+        }
     }
     
     private void handleBackNavigation() {
@@ -1405,6 +1438,11 @@ public class MainActivity extends Activity {
         }
         
         currentDirectory = dir;
+        getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).edit()
+            .putString("last_normal_folder", dir.getAbsolutePath())
+            .putString("last_location_type", "normal")
+            .apply();
+    
         File[] files = dir.listFiles();
 
         if (files != null) {
@@ -1483,6 +1521,15 @@ public class MainActivity extends Activity {
         if (rootDoc != null) {
             safHistory.clear();
             safHistory.add(rootDoc); // Store the DocumentFile directly
+            loadSafDirectory(rootDoc);
+        }
+        
+        if (rootDoc != null) {
+            getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).edit()
+                .putString("last_location_type", "saf")
+                .apply();
+            safHistory.clear();
+            safHistory.add(rootDoc);
             loadSafDirectory(rootDoc);
         }
     }

@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#262626">
+    android:background="#000000">
 
     <!-- Top Bar -->
     <LinearLayout
@@ -50,7 +50,7 @@
             <com.kenzglobe.debugmate.AppBoldTextView
                 style="@style/SettingTitle"
                 android:text="File Manager" />
-
+            
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -59,6 +59,7 @@
                 android:elevation="6dp"
                 android:paddingHorizontal="12dp">
                 
+                <!-- Show Hidden Files -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -96,18 +97,21 @@
                         android:thumbTint="@color/switch_thumb_tint" />
                     
                 </LinearLayout>
-
+            
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="#333333" />
                 
+                <!-- Startup Behavior -->
                 <LinearLayout
+                    android:id="@+id/row_startup_behavior"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingVertical="10dp"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:background="?android:attr/selectableItemBackground">
                     
                     <LinearLayout
                         android:layout_width="0dp"
@@ -118,25 +122,26 @@
                         <com.kenzglobe.debugmate.AppBoldTextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Show File Sizes"
+                            android:text="Startup Behavior"
                             android:textColor="#FFFFFF"
                             android:textSize="15sp" />
                         
                         <com.kenzglobe.debugmate.AppTextView
+                            android:id="@+id/text_startup_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Display the size next to files"
+                            android:text="Welcome Screen"
                             android:textColor="#888888"
                             android:textSize="12sp" />
                             
                     </LinearLayout>
                     
-                    <Switch
-                        android:id="@+id/switch_show_sizes"
+                    <com.kenzglobe.debugmate.AppTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:trackTint="@color/switch_track_tint"
-                        android:thumbTint="@color/switch_thumb_tint" />
+                        android:text=">"
+                        android:textColor="#888888"
+                        android:textSize="16sp" />
                     
                 </LinearLayout>
                 

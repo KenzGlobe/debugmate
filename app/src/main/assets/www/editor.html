@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <style>
+    <style>--<%>--
         html, body {
             margin: 0;
             padding: 0;
@@ -22,28 +22,62 @@
             font-family: monospace;
             font-size: 14px;
         }
-
-        /* DebugMate custom editor colors */
-        .ace-dracula {
-            background-color: #000000;
-        }
-
-        /* Line number gutter */
-        .ace-dracula .ace_gutter {
-            background-color: #000000;
-            color: #808080;
-        }
-
-        /* Currently active code line */
-        .ace-dracula .ace_marker-layer .ace_active-line {
-            background-color: #262626;
-        }
-
-        /* Active line number */
-        .ace-dracula .ace_gutter-active-line {
-            background-color: #262626;
-            color: #8B5CF6;
-        }
+        
+        /* ---------
+            Dracula
+           --------- */
+        .ace-dracula { background-color: #000000 !important; }
+        .ace-dracula .ace_gutter { background-color: #000000 !important; color: #808080 !important; }
+        .ace-dracula .ace_marker-layer .ace_active-line { background-color: #262626 !important; }
+        .ace-dracula .ace_gutter-active-line { background-color: #262626 !important; color: #8B5CF6 !important; }
+        
+        /* ---------
+            Monokai
+           --------- */
+        .ace-monokai { background-color: #000000 !important; }
+        .ace-monokai .ace_gutter { background-color: #000000 !important; color: #808080 !important; }
+        .ace-monokai .ace_marker-layer .ace_active-line { background-color: #262626 !important; }
+        .ace-monokai .ace_gutter-active-line { background-color: #262626 !important; color: #8B5CF6 !important; }
+        
+        /* ----------
+            Twilight
+           ---------- */
+        .ace-twilight { background-color: #000000 !important; }
+        .ace-twilight .ace_gutter { background-color: #000000 !important; color: #808080 !important; }
+        .ace-twilight .ace_marker-layer .ace_active-line { background-color: #262626 !important; }
+        .ace-twilight .ace_gutter-active-line { background-color: #262626 !important; color: #8B5CF6 !important; }
+        
+        /* ----------------
+            Tomorrow_night
+           ---------------- */
+        .ace-tomorrow-night { background-color: #000000 !important; }
+        .ace-tomorrow-night .ace_gutter { background-color: #000000 !important; color: #808080 !important; }
+        .ace-tomorrow-night .ace_marker-layer .ace_active-line { background-color: #262626 !important; }
+        .ace-tomorrow-night .ace_gutter-active-line { background-color: #262626 !important; color: #8B5CF6 !important; }
+        
+        /* ---------
+            Gruvbox
+           --------- */
+        .ace-gruvbox { background-color: #000000 !important; }
+        .ace-gruvbox .ace_gutter { background-color: #000000 !important; color: #808080 !important; }
+        .ace-gruvbox .ace_marker-layer .ace_active-line { background-color: #262626 !important; }
+        .ace-gruvbox .ace_gutter-active-line { background-color: #262626 !important; color: #8B5CF6 !important; }
+        
+        /* ----------------
+            Solarized_dark
+           ---------------- */
+        .ace-solarized-dark { background-color: #000000 !important; }
+        .ace-solarized-dark .ace_gutter { background-color: #000000 !important; color: #808080 !important; }
+        .ace-solarized-dark .ace_marker-layer .ace_active-line { background-color: #262626 !important; }
+        .ace-solarized-dark .ace_gutter-active-line { background-color: #262626 !important; color: #8B5CF6 !important; }
+        
+        /* ----------
+            One_dark
+           ---------- */
+        .ace-one-dark { background-color: #000000 !important; }
+        .ace-one-dark .ace_gutter { background-color: #000000 !important; color: #808080 !important; }
+        .ace-one-dark .ace_marker-layer .ace_active-line { background-color: #262626 !important; }
+        .ace-one-dark .ace_gutter-active-line { background-color: #262626 !important; color: #8B5CF6 !important; }
 
         /* Find & Replace floating panel */
         #findReplacePanel {
@@ -461,7 +495,7 @@
         ace.config.set("modePath", ".");
         ace.config.set("themePath", ".");
         ace.config.set("workerPath", ".");
-
+        
         editor.setTheme("ace/theme/dracula");
         editor.session.setMode("ace/mode/java");
         editor.setShowPrintMargin(false);
@@ -485,11 +519,34 @@
                 css: "ace/mode/css",
                 java: "ace/mode/java",
                 xml: "ace/mode/xml",
+                sql: "ace/mode/sql",
                 json: "ace/mode/json"
             };
 
             var mode = modes[extension] || "ace/mode/text";
             editor.session.setMode(mode);
+        }
+        
+        function setEditorTheme(themeName) {
+            if (window.editor) {
+                var themeMap = {
+                    "Dracula": "ace/theme/dracula",
+                    "Monokai": "ace/theme/monokai",
+                    "Twilight": "ace/theme/twilight",
+                    "Tomorrow Night": "ace/theme/tomorrow_night",
+                    "Gruvbox": "ace/theme/gruvbox",
+                    "Solarized Dark": "ace/theme/solarized_dark",
+                    "One Dark": "ace/theme/one_dark"
+                };
+                
+                var themePath = themeMap[themeName];
+                
+                if (themePath) {
+                    window.editor.setTheme(themePath);
+                } else {
+                    window.editor.setTheme("ace/theme/dracula"); // Fallback
+                }
+            }
         }
 
         // Java calls this to retrieve the current code
@@ -946,6 +1003,88 @@
         function setShowLineNumbers(enabled) {
             if (window.editor) {
                 window.editor.renderer.setShowGutter(enabled);
+            }
+        }
+        
+        function setSoftTabs(enabled) {
+            if (window.editor) {
+                window.editor.getSession().setUseSoftTabs(enabled);
+            }
+        }
+
+        function setLiveAutocomplete(enabled) {
+            if (window.editor) {
+                window.editor.setOptions({
+                    enableLiveAutocompletion: enabled
+                });
+            }
+        }
+        
+        function setEditorFontFamily(fontName) {
+            if (window.editor) {
+                // Map our friendly names to actual CSS font names and fallback
+                var fontMap = {
+                    "Space Mono": "'Space Mono', monospace",
+                    "Fira Code": "'Fira Code', monospace",
+                    "JetBrains Mono": "'JetBrains Mono', monospace",
+                    "Roboto Mono": "'Roboto Mono', monospace",
+                    "Source Code Pro": "'Source Code Pro', monospace"
+                };
+                var cssFont = fontMap[fontName] || "monospace";
+                
+                // Ace Editor requires injecting @font-face if the font is in Android assets.
+                // If you placed the .ttf files in assets/fonts/, we link them here:
+                var styleId = "custom-font-style";
+                if (!document.getElementById(styleId)) {
+                    var style = document.createElement('style');
+                    style.id = styleId;
+                    style.innerHTML = 
+                        "@font-face { font-family: 'Fira Code'; src: url('file:///android_asset/fonts/FiraCode-Regular.ttf'); }" +
+                        "@font-face { font-family: 'JetBrains Mono'; src: url('file:///android_asset/fonts/JetBrainsMono-Regular.ttf'); }" +
+                        "@font-face { font-family: 'Roboto Mono'; src: url('file:///android_asset/fonts/RobotoMono-Regular.ttf'); }" +
+                        "@font-face { font-family: 'Source Code Pro'; src: url('file:///android_asset/fonts/SourceCodePro-Regular.ttf'); }";
+                    document.head.appendChild(style);
+                }
+                
+                window.editor.setOption("fontFamily", cssFont);
+            }
+        }
+        
+        function setEditorTabSize(size) {
+            if (window.editor) {
+                window.editor.getSession().setTabSize(parseInt(size, 10));
+            }
+        }
+        
+        function setEditorTheme(themeName) {
+            if (window.editor) {
+                var themeMap = {
+                    "Dracula": "ace/theme/dracula",
+                    "Monokai": "ace/theme/monokai",
+                    "Twilight": "ace/theme/twilight",
+                    "Tomorrow Night": "ace/theme/tomorrow_night",
+                    "Gruvbox": "ace/theme/gruvbox",
+                    "Solarized Dark": "ace/theme/solarized_dark",
+                    "One Dark": "ace/theme/one_dark"
+                };
+                var themePath = themeMap[themeName] || "ace/theme/dracula";
+                window.editor.setTheme(themePath);
+            }
+        }
+        
+        function setCursorStyle(styleName) {
+            if (window.editor) {
+                var styleMap = {
+                    "Line": "ace/settings",
+                    "Block": "ace/settings",
+                    "Underline": "ace/settings"
+                };
+                
+                // Ace Editor directly supports these via ace/settings
+                var aceStyle = styleName.toLowerCase();
+                if (aceStyle === "line") aceStyle = "slim"; // Ace uses "slim" for line
+                
+                window.editor.setOption("cursorStyle", aceStyle);
             }
         }
         

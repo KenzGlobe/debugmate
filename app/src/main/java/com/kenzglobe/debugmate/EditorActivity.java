@@ -940,9 +940,22 @@ public class EditorActivity extends Activity {
                             SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
                             boolean wrap = prefs.getBoolean("editor_word_wrap", false);
                             boolean lines = prefs.getBoolean("editor_line_numbers", true);
+                            boolean softTabs = prefs.getBoolean("editor_soft_tabs", true);
+                            boolean liveAuto = prefs.getBoolean("editor_live_autocomplete", true);
+                            String fontStyle = prefs.getString("editor_font_style", "Space Mono");
+                            String tabSize = prefs.getString("editor_tab_size", "4");
+                            String theme = prefs.getString("editor_theme", "Dracula");
+                            String cursorStyle = prefs.getString("editor_cursor_style", "Line");
                             
+                            // Apply ALL settings on first load
                             codeEditorWebView.evaluateJavascript("setWordWrap(" + wrap + ");", null);
                             codeEditorWebView.evaluateJavascript("setShowLineNumbers(" + lines + ");", null);
+                            codeEditorWebView.evaluateJavascript("setSoftTabs(" + softTabs + ");", null);
+                            codeEditorWebView.evaluateJavascript("setLiveAutocomplete(" + liveAuto + ");", null);
+                            codeEditorWebView.evaluateJavascript("setEditorFontFamily('" + fontStyle + "');", null);
+                            codeEditorWebView.evaluateJavascript("setEditorTabSize(" + tabSize + ");", null);
+                            codeEditorWebView.evaluateJavascript("setEditorTheme('" + theme + "');", null);
+                            codeEditorWebView.evaluateJavascript("setCursorStyle('" + cursorStyle + "');", null);
                             
                             updateEditorFontSize();
                             
@@ -1748,8 +1761,6 @@ public class EditorActivity extends Activity {
         
         SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
         int newSize = prefs.getInt("editor_font_size", 14);
-        boolean wrap = prefs.getBoolean("editor_word_wrap", false);
-        boolean lines = prefs.getBoolean("editor_line_numbers", true);
 
         if (newSize != currentEditorFontSize) {
             currentEditorFontSize = newSize;
@@ -1760,8 +1771,23 @@ public class EditorActivity extends Activity {
         }
     
         if (editorReady) {
+            boolean wrap = prefs.getBoolean("editor_word_wrap", false);
+            boolean lines = prefs.getBoolean("editor_line_numbers", true);
+            boolean softTabs = prefs.getBoolean("editor_soft_tabs", true);
+            boolean liveAuto = prefs.getBoolean("editor_live_autocomplete", true);
+            String fontStyle = prefs.getString("editor_font_style", "Space Mono");
+            String tabSize = prefs.getString("editor_tab_size", "4");
+            String theme = prefs.getString("editor_theme", "Dracula");
+            String cursorStyle = prefs.getString("editor_cursor_style", "Line");
+
             codeEditorWebView.evaluateJavascript("setWordWrap(" + wrap + ");", null);
             codeEditorWebView.evaluateJavascript("setShowLineNumbers(" + lines + ");", null);
+            codeEditorWebView.evaluateJavascript("setSoftTabs(" + softTabs + ");", null);
+            codeEditorWebView.evaluateJavascript("setLiveAutocomplete(" + liveAuto + ");", null);
+            codeEditorWebView.evaluateJavascript("setEditorFontFamily('" + fontStyle + "');", null);
+            codeEditorWebView.evaluateJavascript("setEditorTabSize(" + tabSize + ");", null);
+            codeEditorWebView.evaluateJavascript("setEditorTheme('" + theme + "');", null);
+            codeEditorWebView.evaluateJavascript("setCursorStyle('" + cursorStyle + "');", null);
         }
     }
     
