@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/settings_section_bg">
+
+    <com.kenzglobe.debugmate.AppBoldTextView
+        android:id="@+id/tv_pin_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enter Vault PIN"
+        android:textColor="#8B5CF6"
+        android:textSize="18sp"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
+
+    <EditText
+        android:id="@+id/et_vault_pin"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/tasks_for_files"
+        android:gravity="center"
+        android:inputType="numberPassword"
+        android:maxLength="4"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:letterSpacing="0.5"/>
+
+</LinearLayout>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:maxHeight="400dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="8dp">
+
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="NAME"
+            android:textColor="#8B5CF6"
+            android:textSize="12sp" />
+
+        <com.kenzglobe.debugmate.AppTextView
+            android:id="@+id/detail_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TYPE"
+            android:textColor="#8B5CF6"
+            android:textSize="12sp" />
+
+        <com.kenzglobe.debugmate.AppTextView
+            android:id="@+id/detail_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SIZE"
+            android:textColor="#8B5CF6"
+            android:textSize="12sp" />
+
+        <com.kenzglobe.debugmate.AppTextView
+            android:id="@+id/detail_size"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="LAST MODIFIED"
+            android:textColor="#8B5CF6"
+            android:textSize="12sp" />
+
+        <com.kenzglobe.debugmate.AppTextView
+            android:id="@+id/detail_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PATH"
+            android:textColor="#8B5CF6"
+            android:textSize="12sp" />
+
+        <com.kenzglobe.debugmate.AppTextView
+            android:id="@+id/detail_path"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+    </LinearLayout>
+    
+</ScrollView>

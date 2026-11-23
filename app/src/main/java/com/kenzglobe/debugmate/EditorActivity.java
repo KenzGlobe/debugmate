@@ -746,6 +746,13 @@ public class EditorActivity extends Activity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 File clickedFile = treeFiles.get(position);
+                
+                // --- BLOCK PROTECTED FILES ---
+                if (clickedFile.getName().equals(".debugmate_activity.json")) {
+                    AppToast.showError(EditorActivity.this, "This is a protected system file.");
+                    return;
+                }
+                
                 if (clickedFile.isDirectory()) {
                     loadTree(clickedFile);
                 } else {
@@ -864,6 +871,9 @@ public class EditorActivity extends Activity {
                     return;
                 }
                 
+                // Get the count of files being committed
+                final int fileCount = changedFilesList.size(); 
+                
                 AppToast.showInfo(EditorActivity.this, "Committing...");
                 new Thread(new Runnable() {
                     @Override
@@ -874,8 +884,28 @@ public class EditorActivity extends Activity {
                             public void run() {
                                 if (result.startsWith("Success")) {
                                     AppToast.showSuccess(EditorActivity.this, result);
+                                    
+                                    String projectPath = ProjectManager.getProjectPathForFile(EditorActivity.this, treeCurrentDir.getAbsolutePath());
+                                    if (projectPath != null) {
+                                        
+                                        // Add file count to the message for better context
+                                        String logMessage = "Commit created: \"" + msg + "\"";
+                                        if (fileCount > 0) {
+                                            logMessage += " (" + fileCount + " file" + (fileCount > 1 ? "s" : "") + ")";
+                                        }
+        
+                                        RecentActivityManager.log(
+                                            EditorActivity.this,
+                                            projectPath,
+                                            "git_commit",
+                                            logMessage,
+                                            "\uf1d3",
+                                            true
+                                        );
+                                    }
+        
                                     gitCommitMessage.setText("");
-                                    btnGitStatus.performClick(); // Refresh list (should be empty now)
+                                    btnGitStatus.performClick(); 
                                 } else {
                                     AppToast.showError(EditorActivity.this, result);
                                 }
@@ -891,7 +921,6 @@ public class EditorActivity extends Activity {
             public void onClick(View v) {
                 if (treeCurrentDir == null) return;
                 
-                // Get credentials from SharedPreferences (saved during Clone)
                 SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
                 final String user = prefs.getString("git_username", "");
                 final String token = prefs.getString("git_token", "");
@@ -911,6 +940,24 @@ public class EditorActivity extends Activity {
                             public void run() {
                                 if (result.startsWith("Success")) {
                                     AppToast.showSuccess(EditorActivity.this, result);
+                                    
+                                    // ==========================================
+                                    // LOG PUSH ACTIVITY
+                                    // ==========================================
+                                    String projectPath = ProjectManager.getProjectPathForFile(EditorActivity.this, treeCurrentDir.getAbsolutePath());
+                                    if (projectPath != null) {
+                                        String branch = getCurrentBranchName(treeCurrentDir);
+                                        RecentActivityManager.log(
+                                            EditorActivity.this,
+                                            projectPath,
+                                            "git_push",
+                                            "Pushed to origin/" + branch,
+                                            "\uf0e2", // Upload icon
+                                            false
+                                        );
+                                    }
+                                    // ==========================================
+                                    
                                 } else {
                                     AppToast.showError(EditorActivity.this, result);
                                 }
@@ -1019,6 +1066,12 @@ public class EditorActivity extends Activity {
     }
     
     private void loadSafFile(Uri uri, String name) {
+        // --- BLOCK PROTECTED FILES ---
+        if (name.equals(".debugmate_activity.json")) {
+            AppToast.showError(EditorActivity.this, "This is a protected system file.");
+            return;
+        }
+        
         currentSafUri = uri.toString();
         currentSafName = name;
         currentFile = null; // Ensure normal file is null
@@ -1066,6 +1119,20 @@ public class EditorActivity extends Activity {
     
         } catch (Exception e) {
             AppToast.showError(EditorActivity.this, "Error reading SAF file: " + e.getMessage());
+        }
+    }
+    
+    private String getCurrentBranchName(File repoDir) {
+        try {
+            org.eclipse.jgit.storage.file.FileRepositoryBuilder builder = new org.eclipse.jgit.storage.file.FileRepositoryBuilder();
+            builder.setGitDir(new File(repoDir, ".git"));
+            org.eclipse.jgit.lib.Repository repo = builder.build();
+            
+            String branch = repo.getBranch();
+            repo.close();
+            return branch != null ? branch : "main";
+        } catch (Exception e) {
+            return "main";
         }
     }
 
@@ -1279,6 +1346,7 @@ public class EditorActivity extends Activity {
                     if (dotIndex != -1) {
                         ext = currentFile.getName().substring(dotIndex + 1).toLowerCase();
                     }
+                    
                     intent.putExtra("extension", ext);
 
                     startActivity(intent);
@@ -1400,6 +1468,12 @@ public class EditorActivity extends Activity {
     private void loadFile(File file) {
         if (file == null || !file.exists() || !file.isFile()) {
             AppToast.showError(EditorActivity.this, "File not found.");
+            return;
+        }
+        
+        // --- BLOCK PROTECTED FILES ---
+        if (file.getName().equals(".debugmate_activity.json")) {
+            AppToast.showError(EditorActivity.this, "This is a protected system file.");
             return;
         }
         
@@ -1535,7 +1609,6 @@ public class EditorActivity extends Activity {
 
     private void saveCurrentFile() {
         if (currentSafUri != null) {
-            // We are saving a SAF file
             codeEditorWebView.evaluateJavascript("getCode();", new android.webkit.ValueCallback<String>() {
                 @Override
                 public void onReceiveValue(String result) {
@@ -1555,21 +1628,21 @@ public class EditorActivity extends Activity {
                     }
                 }
             });
-            return; // Exit early so it doesn't try to save a normal file
+            return; 
         }
         
         if (currentFile == null) {
             AppToast.showError(EditorActivity.this, "No file selected.");
             return;
         }
-
+    
         if (!editorReady) {
             AppToast.showInfo(EditorActivity.this, "Editor is still loading.");
             return;
         }
-
+    
         final File fileToSave = currentFile;
-
+    
         codeEditorWebView.evaluateJavascript("getCode();", new android.webkit.ValueCallback<String>() {
             @Override
             public void onReceiveValue(String result) {
@@ -1577,15 +1650,20 @@ public class EditorActivity extends Activity {
                     if (result == null || "null".equals(result)) {
                         throw new Exception("Editor returned no content.");
                     }
-
+    
                     String cleanCode = new JSONArray("[" + result + "]").getString(0);
-
+    
                     try (FileWriter writer = new FileWriter(fileToSave, false)) {
                         writer.write(cleanCode);
                     }
-
-                    AppToast.showSuccess(EditorActivity.this, "Saved successfully! ✔️");
-
+    
+                    AppToast.showSuccess(EditorActivity.this, "Saved successfully!");
+    
+                    String projectPath = ProjectManager.getProjectPathForFile(EditorActivity.this, fileToSave.getAbsolutePath());
+                    if (projectPath != null) {
+                        RecentActivityManager.logFileModified(EditorActivity.this, projectPath, fileToSave.getName());
+                    }
+    
                 } catch (Exception e) {
                     AppToast.showError(EditorActivity.this, "Error saving: " + e.getMessage());
                 }

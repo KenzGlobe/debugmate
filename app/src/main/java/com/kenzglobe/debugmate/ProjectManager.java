@@ -38,6 +38,17 @@ public class ProjectManager {
         }
         writeToFile(context, projects);
     }
+    
+    public static String getProjectPathForFile(Context context, String filePath) {
+        if (filePath == null) return null;
+        ArrayList<ProjectItem> projects = loadProjects(context);
+        for (int i = 0; i < projects.size(); i++) {
+            if (filePath.startsWith(projects.get(i).path)) {
+                return projects.get(i).path;
+            }
+        }
+        return null; 
+    }
 
     public static void removeProject(Context context, String path) {
         ArrayList<ProjectItem> projects = loadProjects(context);

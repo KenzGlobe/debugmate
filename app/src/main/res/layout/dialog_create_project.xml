@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="8dp">
+
+    <!-- Project Name -->
+    <com.kenzglobe.debugmate.AppBoldTextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Project Name"
+        android:textColor="#8B5CF6"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/input_project_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="e.g., MyApp"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#666666"
+        android:inputType="text"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Package Name (Hidden for non-Android projects) -->
+    <LinearLayout
+        android:id="@+id/layout_package_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <com.kenzglobe.debugmate.AppBoldTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Package Name"
+            android:textColor="#8B5CF6"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/input_package_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="com.example.myapp"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666"
+            android:inputType="text"
+            android:layout_marginBottom="8dp" />
+            
+    </LinearLayout>
+
+</LinearLayout>

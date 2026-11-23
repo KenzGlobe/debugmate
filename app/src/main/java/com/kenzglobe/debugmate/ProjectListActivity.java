@@ -3,8 +3,9 @@ package com.kenzglobe.debugmate;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
-import android.content.ClipboardManager;
 import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -29,15 +30,24 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import android.hardware.fingerprint.FingerprintManager;
+import android.os.CancellationSignal;
+import android.os.Handler;
+import android.widget.EditText;
 
 public class ProjectListActivity extends Activity {
 
     private GridView projectGridView;
     private LinearLayout emptyLayout;
-    private TextView emptyIcon, btnShowHidden, btnClose;
+    private TextView emptyIcon, btnShowHidden, btnClose, workspaceBtn;
     private ProjectAdapter adapter;
     private ArrayList<ProjectItem> projectList, displayList;
     private boolean showingHidden = false;
+    
+    private FingerprintManager fingerprintManager;
+    private CancellationSignal cancellationSignal;
+    private boolean isAuthenticating = false;
+    private int fingerprintFailCount = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,28 +60,34 @@ public class ProjectListActivity extends Activity {
         }
         if (getActionBar() != null) getActionBar().hide();
         
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            fingerprintManager = (FingerprintManager) getSystemService(FINGERPRINT_SERVICE);
+        }
+        
         Typeface solidFont = Typeface.createFromAsset(getAssets(), "fonts/fa-solid-900-v5.ttf");
         
         btnClose = findViewById(R.id.btn_close_projects);
         btnClose.setTypeface(solidFont);
         btnClose.setText("\uf060");
         
-        // Dynamically add the "Show Hidden" eye icon to the top bar
-        btnShowHidden = new TextView(this);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(55, LinearLayout.LayoutParams.MATCH_PARENT);
-        btnShowHidden.setLayoutParams(params);
-        btnShowHidden.setGravity(Gravity.CENTER);
-        btnShowHidden.setTextColor(Color.WHITE);
-        btnShowHidden.setTextSize(20f);
+        btnShowHidden = findViewById(R.id.btn_show_hidden);
         btnShowHidden.setTypeface(solidFont);
-        btnShowHidden.setText("\uf06e"); // Eye icon
-        ((LinearLayout)btnClose.getParent()).addView(btnShowHidden);
+        btnShowHidden.setText("\uf06e");
         
         projectGridView = findViewById(R.id.project_list);
         emptyLayout = findViewById(R.id.empty_projects_layout);
         emptyIcon = findViewById(R.id.empty_icon_projects);
         emptyIcon.setTypeface(solidFont);
         emptyIcon.setText("\uf07b"); // Folder icon
+        workspaceBtn = findViewById(R.id.workspace_btn);
+        
+        workspaceBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                android.content.Intent intent = new android.content.Intent(ProjectListActivity.this, EditorActivity.class);
+                startActivity(intent);
+            }
+        });
         
         btnClose.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -81,9 +97,25 @@ public class ProjectListActivity extends Activity {
         btnShowHidden.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showingHidden = !showingHidden;
-                btnShowHidden.setTextColor(showingHidden ? Color.parseColor("#8B5CF6") : Color.WHITE);
-                loadData();
+                if (showingHidden) {
+                    // If it's already showing, just lock it immediately
+                    showingHidden = false;
+                    btnShowHidden.setText("\uf06e"); // Eye icon
+                    loadData();
+                    return;
+                }
+        
+                // If NOT showing, authenticate first
+                SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
+                String savedPin = prefs.getString("vault_pin", null);
+        
+                if (savedPin == null || savedPin.isEmpty()) {
+                    // PIN not set up yet. Ask them to create one.
+                    showSetupPinDialog();
+                } else {
+                    // PIN is set. Try biometrics first, fallback to PIN.
+                    authenticateVault(savedPin);
+                }
             }
         });
         
@@ -92,7 +124,7 @@ public class ProjectListActivity extends Activity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 ProjectItem item = displayList.get(position);
                 if (new File(item.path).exists()) {
-                    Intent intent = new Intent(ProjectListActivity.this, MainActivity.class);
+                    Intent intent = new Intent(ProjectListActivity.this, ProjectDashboardActivity.class);
                     intent.putExtra("START_DIRECTORY", item.path);
                     startActivity(intent);
                 } else {
@@ -199,17 +231,26 @@ public class ProjectListActivity extends Activity {
         });
         dialog.show();
     }
-
+    
     private void togglePin(ProjectItem item) {
         item.isPinned = !item.isPinned;
-        // Pass item.path for both oldPath and current item
         ProjectManager.updateProject(this, item.path, item);
+        
+        String action = item.isPinned ? "State Changed: Project pinned" : "State Changed: Project unpinned";
+        RecentActivityManager.log(this, item.path, "state", action, "\uf08d", false);
+        
         loadData();
     }
-
+    
     private void toggleHide(ProjectItem item) {
         item.isHidden = !item.isHidden;
         ProjectManager.updateProject(this, item.path, item);
+        
+        String action = item.isHidden ? "State Changed: Project hidden" : "State Changed: Project unhidden";
+        String icon = item.isHidden ? "\uf023" : "\uf070"; // Lock vs Eye
+        
+        RecentActivityManager.log(this, item.path, "state", action, icon, false);
+        
         loadData();
     }
 
@@ -418,5 +459,152 @@ public class ProjectListActivity extends Activity {
             }
         }
         return size;
+    }
+    
+    private void authenticateVault(final String savedPin) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M &&
+            fingerprintManager != null &&
+            fingerprintManager.isHardwareDetected() && 
+            fingerprintManager.hasEnrolledFingerprints()) {
+            
+            // Reset the counter for this session
+            fingerprintFailCount = 0;
+
+            final Dialog bioDialog = new Dialog(this);
+            bioDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            bioDialog.setContentView(R.layout.dialog_vault_pin); 
+            if (bioDialog.getWindow() != null) bioDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            
+            TextView title = bioDialog.findViewById(R.id.tv_pin_title);
+            EditText input = bioDialog.findViewById(R.id.et_vault_pin);
+            
+            title.setText("Touch Fingerprint Sensor");
+            input.setVisibility(View.GONE);
+            
+            // ALLOW THE USER TO DISMISS IT
+            bioDialog.setCancelable(true); 
+            
+            // WHAT HAPPENS IF THEY DISMISS IT?
+            bioDialog.setOnCancelListener(new android.content.DialogInterface.OnCancelListener() {
+                @Override
+                public void onCancel(android.content.DialogInterface dialog) {
+                    // 1. Stop the fingerprint sensor
+                    if (cancellationSignal != null) {
+                        cancellationSignal.cancel();
+                    }
+                    isAuthenticating = false;
+                    
+                    // 2. Immediately show the PIN dialog
+                    showPinEntryDialog(savedPin);
+                }
+            });
+            
+            bioDialog.show();
+
+            cancellationSignal = new CancellationSignal();
+            isAuthenticating = true;
+
+            fingerprintManager.authenticate(null, cancellationSignal, 0, new FingerprintManager.AuthenticationCallback() {
+                @Override
+                public void onAuthenticationSucceeded(FingerprintManager.AuthenticationResult result) {
+                    isAuthenticating = false;
+                    bioDialog.dismiss();
+                    unlockVault();
+                }
+
+                @Override
+                public void onAuthenticationFailed() {
+                    fingerprintFailCount++;
+                    
+                    if (fingerprintFailCount >= 3) {
+                        isAuthenticating = false;
+                        if (cancellationSignal != null) {
+                            cancellationSignal.cancel();
+                        }
+                        bioDialog.dismiss();
+                        AppToast.showError(ProjectListActivity.this, "Too many failed attempts. Please use PIN.");
+                    } else {
+                        AppToast.showInfo(ProjectListActivity.this, "Fingerprint not recognized. Attempts left: " + (3 - fingerprintFailCount));
+                    }
+                }
+                
+                @Override
+                public void onAuthenticationError(int errorCode, CharSequence errString) {
+                    isAuthenticating = false;
+                    if (bioDialog.isShowing()) {
+                        bioDialog.dismiss();
+                        showPinEntryDialog(savedPin);
+                    }
+                }
+            }, null);
+            
+        } else {
+            showPinEntryDialog(savedPin);
+        }
+    }
+    
+    private void unlockVault() {
+        showingHidden = true;
+        btnShowHidden.setText("\uf09c"); // Unlocked Lock icon
+        loadData();
+        AppToast.showSuccess(this, "Vault Unlocked");
+    }
+    
+    private void showPinEntryDialog(final String savedPin) {
+        final EditText input = new EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        input.setPadding(20, 20, 20, 20);
+        input.setTextColor(Color.WHITE);
+    
+        AppDialog.show(this, "Vault Locked", "Enter 4-digit PIN:", input, "UNLOCK", "CANCEL",
+            new AppDialog.OnDialogClickListener() {
+                @Override
+                public void onClick() {
+                    String enteredPin = input.getText().toString().trim();
+                    if (enteredPin.equals(savedPin)) {
+                        unlockVault();
+                    } else {
+                        AppToast.showError(ProjectListActivity.this, "Incorrect PIN!");
+                    }
+                }
+            }, null);
+    }
+    
+    private void showSetupPinDialog() {
+        final EditText input = new EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        input.setPadding(20, 20, 20, 20);
+        input.setTextColor(Color.WHITE);
+    
+        AppDialog.show(this, "Setup Vault", "Create a 4-digit PIN to protect hidden projects:", input, "SAVE", "CANCEL",
+            new AppDialog.OnDialogClickListener() {
+                @Override
+                public void onClick() {
+                    String newPin = input.getText().toString().trim();
+                    if (newPin.length() == 4) {
+                        getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).edit().putString("vault_pin", newPin).apply();
+                        AppToast.showSuccess(ProjectListActivity.this, "Vault PIN setup complete!");
+                        unlockVault();
+                    } else {
+                        AppToast.showError(ProjectListActivity.this, "PIN must be exactly 4 digits.");
+                    }
+                }
+            }, null);
+    }
+    
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Auto-lock the vault when the user leaves the screen
+        if (showingHidden) {
+            showingHidden = false;
+            btnShowHidden.setText("\uf06e"); // Eye icon
+            loadData();
+        }
+        // Cancel any ongoing biometric scan
+        if (isAuthenticating && cancellationSignal != null) {
+            cancellationSignal.cancel();
+            isAuthenticating = false;
+        }
     }
 }

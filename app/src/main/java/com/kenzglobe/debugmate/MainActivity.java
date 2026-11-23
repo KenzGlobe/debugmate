@@ -11,12 +11,25 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Environment;
 import android.net.Uri;
-import android.widget.*;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.ListView;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.view.View;
 import android.view.Gravity;
 import android.view.View.OnClickListener;
 import android.support.v4.widget.DrawerLayout;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.util.List;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Arrays;
@@ -112,16 +125,15 @@ public class MainActivity extends Activity {
     private TextView navBarSectionOne,
         navBarSectionTwo,
         navBarSectionThree,
-        navBarSectionFour,
-        navBarAppName;
-        
+        navBarSectionFour;
+    
     private TextView sideBarBtn,
         appName,
         haveAProject,
         fabAdd,
         createFolderBtn,
         createFileBtn;
-        
+    
     private TextView createProjectIcon,
         createProjectBtn,
         importProjectIcon,
@@ -191,7 +203,6 @@ public class MainActivity extends Activity {
         cloneFromGitIcon = findViewById(R.id.clone_from_git_icon);
         cloneFromGitBtn = findViewById(R.id.clone_from_git_btn);
         appName = findViewById(R.id.app_name);
-        navBarAppName = findViewById(R.id.nav_bar_app_name);
         createFolderBtn = findViewById(R.id.create_folder_btn);
         createFileBtn = findViewById(R.id.create_file_btn);
         drawerLayout = findViewById(R.id.drawer_layout);
@@ -224,11 +235,6 @@ public class MainActivity extends Activity {
                     }
                 });
             }
-        }
-        
-        startDirectoryPath = getIntent().getStringExtra("START_DIRECTORY");
-        if (startDirectoryPath != null) {
-            currentDirectory = new File(startDirectoryPath);
         }
         
         navItemFileManager = findViewById(R.id.nav_item_file_manager);
@@ -281,7 +287,6 @@ public class MainActivity extends Activity {
         
         if (appName != null) appName.setTypeface(appFontBold);
         if (haveAProject != null) haveAProject.setTypeface(appFontBold);
-        if (navBarAppName != null) navBarAppName.setTypeface(appFontBold);
         if (navBarSectionOne != null) navBarSectionOne.setTypeface(appFontBold);
         if (navBarSectionTwo != null) navBarSectionTwo.setTypeface(appFontBold);
         if (navBarSectionThree != null) navBarSectionThree.setTypeface(appFontBold);
@@ -672,24 +677,46 @@ public class MainActivity extends Activity {
                 @Override
                 public void onClick(View v) {
                     ArrayList<Uri> uris = new ArrayList<>();
+                    
                     for (FileItem item : fileList) {
                         if (item.isSelected && !item.isDir) {
-                            Uri uri = android.support.v4.content.FileProvider.getUriForFile(
-                                    MainActivity.this,
-                                    getPackageName() + ".fileprovider",
-                                    item.file
-                            );
+                            Uri uri;
+                            
+                            if (item.isSaf) {
+                                // SAF files already have a content:// URI
+                                uri = item.docFile.getUri();
+                            } else {
+                                // Normal files need FileProvider
+                                uri = android.support.v4.content.FileProvider.getUriForFile(
+                                        MainActivity.this,
+                                        getPackageName() + ".fileprovider",
+                                        item.file
+                                );
+                            }
+                            
                             uris.add(uri);
                         }
                     }
 
-                    if (uris.isEmpty()) return;
+                    if (uris.isEmpty()) {
+                        AppToast.showInfo(MainActivity.this, "Please select at least one file.");
+                        return;
+                    }
+                    
+                    // LOG THE ACTIVITIES
+                    for (FileItem item : fileList) {
+                        if (item.isSelected && !item.isDir && !item.isSaf) {
+                            logProjectActivity(item.file.getAbsolutePath(), "share", "File shared: " + item.name, "\uf064");
+                        }
+                    }
 
                     Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
                     intent.setType("*/*");
                     intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     startActivity(Intent.createChooser(intent, "Share files via"));
+                    
+                    exitSelectionMode(); // Good UX to exit selection mode after sharing
                 }
             });
         }
@@ -752,42 +779,68 @@ public class MainActivity extends Activity {
                     for (FileItem item : fileList) {
                         if (item.isSelected) selectedCount++;
                     }
-
+        
                     if (selectedCount == 0) return;
-
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setTitle("Delete " + selectedCount + (selectedCount == 1 ? " item?" : " items?"));
-                    builder.setMessage("Are you sure you want to delete the selected items? This action cannot be undone.");
-            
-                    builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            int deletedSuccessfully = 0;
-                            int failedToDelete = 0;
-
-                            for (FileItem item : fileList) {
-                                if (item.isSelected) {
-                                    if (deleteRecursive(item.file)) {
-                                        deletedSuccessfully++;
-                                    } else {
-                                        failedToDelete++;
+        
+                    String title = "Delete " + selectedCount + (selectedCount == 1 ? " item?" : " items?");
+                    String message = "Are you sure you want to delete the selected items? This action cannot be undone.";
+        
+                    // Use your custom AppDialog
+                    AppDialog.show(
+                        MainActivity.this,
+                        title,
+                        message,
+                        "DELETE",
+                        "CANCEL",
+                        new AppDialog.OnDialogClickListener() {
+                            @Override
+                            public void onClick() {
+                                int deletedSuccessfully = 0;
+                                int failedToDelete = 0;
+        
+                                for (FileItem item : fileList) {
+                                    if (item.isSelected) {
+                                        boolean success = false;
+                                        
+                                        if (item.isSaf) {
+                                            // SAF Delete
+                                            success = item.docFile.delete();
+                                        } else {
+                                            // Normal File Delete
+                                            success = deleteRecursive(item.file);
+                                        }
+        
+                                        if (success) {
+                                            deletedSuccessfully++;
+                                            
+                                            // LOG THE ACTIVITY (Only for normal files, SAF uses URIs)
+                                            if (!item.isSaf) {
+                                                String typeStr = item.isDir ? "Folder" : "File";
+                                                logProjectActivity(item.file.getAbsolutePath(), "delete", typeStr + " deleted: " + item.name, "\uf2ed");
+                                            }
+                                            
+                                        } else {
+                                            failedToDelete++;
+                                        }
                                     }
                                 }
+        
+                                if (failedToDelete == 0) {
+                                    AppToast.showSuccess(MainActivity.this, "Successfully deleted " + deletedSuccessfully + " item(s).");
+                                } else {
+                                    AppToast.showSuccess(MainActivity.this, "Deleted " + deletedSuccessfully + ", but failed to delete " + failedToDelete + " item(s).");
+                                }
+        
+                                exitSelectionMode();
+                                if (currentDirectory != null) {
+                                    loadDirectory(currentDirectory);
+                                } else if (!safHistory.isEmpty()) {
+                                    loadSafDirectory(safHistory.get(safHistory.size() - 1));
+                                }
                             }
-
-                            if (failedToDelete == 0) {
-                                AppToast.showSuccess(MainActivity.this, "Successfully deleted " + deletedSuccessfully + " item(s).");
-                            } else {
-                                AppToast.showSuccess(MainActivity.this, "Deleted " + deletedSuccessfully + ", but failed to delete " + failedToDelete + " item(s).");
-                            }
-
-                            exitSelectionMode();
-                            loadDirectory(currentDirectory);
-                        }
-                    });
-            
-                    builder.setNegativeButton("Cancel", null);
-                    builder.show();
+                        },
+                        null
+                    );
                 }
             });
         }
@@ -814,22 +867,42 @@ public class MainActivity extends Activity {
             filesAddAsProjectBtn.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    FileItem selectedItem = null;
+                    final FileItem selectedItem;
+                    FileItem tempItem = null;
+                    
                     for (FileItem item : fileList) {
                         if (item.isSelected) {
-                            selectedItem = item;
+                            tempItem = item;
                             break;
                         }
                     }
-            
-                    if (selectedItem == null) return;
-
+                    
+                    if (tempItem == null) return;
+                    selectedItem = tempItem;
+        
                     if (!selectedItem.isDir) {
                         AppToast.showSuccess(MainActivity.this, "Please select a folder, not a file.");
                         return;
                     }
                     
-                    showAddAsProjectDialog(selectedItem);
+                    if (isProjectFolder(selectedItem.file)) {
+                        showAddAsProjectDialog(selectedItem);
+                    } else {
+                        AppDialog.show(
+                            MainActivity.this,
+                            "Not a Project Folder",
+                            "This folder doesn't contain any recognizable project files or source code.\n\nAre you sure you want to add it?",
+                            "ADD ANYWAY",
+                            "CANCEL",
+                            new AppDialog.OnDialogClickListener() {
+                                @Override
+                                public void onClick() {
+                                    showAddAsProjectDialog(selectedItem); 
+                                }
+                            },
+                            null
+                        );
+                    }
                 }
             });
         }
@@ -867,39 +940,80 @@ public class MainActivity extends Activity {
                     }
             
                     if (selectedItem == null || selectedItem.isDir) {
-                        AppToast.showSuccess(MainActivity.this, "Please select a file.");
+                        AppToast.showInfo(MainActivity.this, "Please select a file.");
                         return;
                     }
-
+        
                     String ext = selectedItem.ext.toLowerCase();
                     String mimeType = java.net.URLConnection.guessContentTypeFromName(selectedItem.name);
-
+        
                     if (mimeType == null) {
                         mimeType = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
                     }
-
                     if (mimeType == null) {
                         mimeType = "*/*"; 
                     }
-
+        
                     try {
-                        Uri uri = android.support.v4.content.FileProvider.getUriForFile(
-                                MainActivity.this,
-                                getPackageName() + ".fileprovider",
-                                selectedItem.file
-                        );
-
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        Uri uri;
+                        // --- THE FIX: Check if SAF or Normal ---
+                        if (selectedItem.isSaf) {
+                            uri = selectedItem.docFile.getUri();
+                        } else {
+                            uri = android.support.v4.content.FileProvider.getUriForFile(
+                                    MainActivity.this,
+                                    getPackageName() + ".fileprovider",
+                                    selectedItem.file
+                            );
+                        }
+        
+                        final Intent intent = new Intent(Intent.ACTION_VIEW);
                         intent.setDataAndType(uri, mimeType);
                         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-                        startActivity(Intent.createChooser(intent, "Open with"));
-                        exitSelectionMode();
-
+        
+                        // 1. Query Android for all apps that can handle this intent
+                        final List<android.content.pm.ResolveInfo> apps = getPackageManager().queryIntentActivities(intent, 0);
+        
+                        if (apps.isEmpty()) {
+                            AppToast.showError(MainActivity.this, "No app found to open this file type.");
+                            return;
+                        }
+        
+                        // 2. Build our custom dialog
+                        final android.app.Dialog dialog = new android.app.Dialog(MainActivity.this);
+                        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+                        dialog.setContentView(R.layout.dialog_open_with);
+                        
+                        // Apply the dark background shape to the dialog
+                        if (dialog.getWindow() != null) {
+                            dialog.getWindow().setBackgroundDrawableResource(R.drawable.bg_custom_popup); 
+                        }
+                        
+                        ListView listView = dialog.findViewById(R.id.open_with_list);
+                        OpenWithAdapter adapter = new OpenWithAdapter(MainActivity.this, apps);
+                        listView.setAdapter(adapter);
+        
+                        // 3. Handle clicks on the app list
+                        listView.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {
+                            @Override
+                            public void onItemClick(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                                android.content.pm.ResolveInfo info = apps.get(position);
+                                
+                                // Launch the specific app the user clicked
+                                intent.setPackage(info.activityInfo.packageName);
+                                startActivity(intent);
+                                
+                                dialog.dismiss();
+                                exitSelectionMode();
+                            }
+                        });
+        
+                        dialog.show();
+        
                     } catch (android.content.ActivityNotFoundException e) {
-                        AppToast.showSuccess(MainActivity.this, "No app found to open this file type (" + ext + ")");
+                        AppToast.showError(MainActivity.this, "No app found to open this file type.");
                     } catch (Exception e) {
-                        AppToast.showSuccess(MainActivity.this, "Error opening file: " + e.getMessage());
+                        AppToast.showError(MainActivity.this, "Error opening file: " + e.getMessage());
                     }
                 }
             });
@@ -957,9 +1071,21 @@ public class MainActivity extends Activity {
                 FileItem item = fileList.get(position);
                 
                 if (isSelectionMode) {
+                    // --- BLOCK PROTECTED FILES ---
+                    if (item.name.equals(".debugmate_activity.json")) {
+                        AppToast.showError(MainActivity.this, "This is a protected system file.");
+                        return;
+                    }
+                    
                     item.isSelected = !item.isSelected;
                     adapter.notifyDataSetChanged();
                     updateSelectionCount();
+                    return;
+                }
+                
+                // --- BLOCK PROTECTED FILES ---
+                if (item.name.equals(".debugmate_activity.json")) {
+                    AppToast.showError(MainActivity.this, "This is a protected system file.");
                     return;
                 }
                 
@@ -1107,6 +1233,12 @@ public class MainActivity extends Activity {
         if (!isPickerMode) {
             int startupBehavior = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE).getInt("startup_behavior", 0);
             
+            startDirectoryPath = getIntent().getStringExtra("START_DIRECTORY");
+            if (startDirectoryPath != null) {
+                currentDirectory = new File(startDirectoryPath);
+                return;
+            }
+            
             if (startupBehavior == 1) {
                 // Load Last Opened Folder
                 SharedPreferences prefs = getSharedPreferences("DebugMatePrefs", MODE_PRIVATE);
@@ -1134,6 +1266,112 @@ public class MainActivity extends Activity {
                 // 0: Welcome Screen (default behavior)
                 showWelcomeScreen();
             }
+        }
+    }
+    
+    // Helper to check if a file is a recognized source code file
+    private boolean isCodeFile(String fileName) {
+        String lower = fileName.toLowerCase();
+        return lower.endsWith(".py") || lower.endsWith(".js") || lower.endsWith(".ts") || 
+               lower.endsWith(".java") || lower.endsWith(".kt") || lower.endsWith(".html") || 
+               lower.endsWith(".css") || lower.endsWith(".c") || lower.endsWith(".cpp") || 
+               lower.endsWith(".cs") || lower.endsWith(".go") || lower.endsWith(".rs") || 
+               lower.endsWith(".php") || lower.endsWith(".rb") || lower.endsWith(".swift") || 
+               lower.endsWith(".sh");
+    }
+    
+    // Helper to validate if a folder is a legitimate project
+    private boolean isProjectFolder(File dir) {
+        if (dir == null || !dir.isDirectory()) return false;
+        
+        // 1. Check for standard project config files / markers
+        String[] configFiles = {
+            "package.json", "requirements.txt", "pom.xml", "build.gradle", 
+            "AndroidManifest.xml", "index.html", "Cargo.toml", "go.mod", 
+            "composer.json", "Gemfile", "setup.py", "pyproject.toml", ".git"
+        };
+        
+        for (String config : configFiles) {
+            if (new File(dir, config).exists()) return true;
+        }
+    
+        // 2. Check the root and one level deep for source code files
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isFile() && isCodeFile(f.getName())) {
+                    return true; // Found code in root
+                }
+                if (f.isDirectory()) {
+                    File[] subFiles = f.listFiles();
+                    if (subFiles != null) {
+                        for (File sf : subFiles) {
+                            if (sf.isFile() && isCodeFile(sf.getName())) {
+                                return true; // Found code one level deep (e.g., inside /src)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return false; // No config files or code found
+    }
+    
+    // Helper method to log if the path belongs to a registered project
+    private void logProjectActivity(String itemPath, String actionType, String message, String icon) {
+        if (itemPath == null) return;
+        
+        ArrayList<ProjectItem> allProjects = ProjectManager.loadProjects(MainActivity.this);
+        for (int i = 0; i < allProjects.size(); i++) {
+            ProjectItem p = allProjects.get(i);
+            if (itemPath.startsWith(p.path)) {
+                RecentActivityManager.log(MainActivity.this, p.path, actionType, message, icon, false);
+                break;
+            }
+        }
+    }
+    
+    // Helper method specifically for Copy/Move operations to track project boundaries
+    private void logPasteAction(FileItem item, String destPath, boolean isMoveMode) {
+        if (item.isSaf || destPath == null) return; // Skip SAF paths for now
+        
+        String srcPath = item.file.getAbsolutePath();
+        String action = isMoveMode ? "moved" : "copied";
+        String typeStr = item.isDir ? "Folder" : "File";
+        
+        ArrayList<ProjectItem> allProjects = ProjectManager.loadProjects(MainActivity.this);
+        String srcProjectPath = null;
+        String destProjectPath = null;
+        
+        // 1. Find if source and destination belong to a project
+        for (int i = 0; i < allProjects.size(); i++) {
+            ProjectItem p = allProjects.get(i);
+            if (srcPath.startsWith(p.path)) srcProjectPath = p.path;
+            if (destPath.startsWith(p.path)) destProjectPath = p.path;
+        }
+        
+        // 2. Log based on the combination
+        if (srcProjectPath != null && destProjectPath != null) {
+            if (srcProjectPath.equals(destProjectPath)) {
+                // Same project
+                RecentActivityManager.log(this, srcProjectPath, "paste", 
+                    typeStr + " " + action + " within project: " + item.name, "\uf0c5", false);
+            } else {
+                // Cross-project (Project A to Project B)
+                RecentActivityManager.log(this, srcProjectPath, "paste", 
+                    typeStr + " " + action + " OUT to another project: " + item.name, "\uf0c5", false);
+                RecentActivityManager.log(this, destProjectPath, "paste", 
+                    typeStr + " " + action + " IN from another project: " + item.name, "\uf0c5", false);
+            }
+        } else if (srcProjectPath != null && destProjectPath == null) {
+            // Outbound (Project to External)
+            RecentActivityManager.log(this, srcProjectPath, "paste", 
+                typeStr + " " + action + " OUT to: " + new File(destPath).getParent(), "\uf0c5", false);
+        } else if (srcProjectPath == null && destProjectPath != null) {
+            // Inbound (External to Project)
+            RecentActivityManager.log(this, destProjectPath, "paste", 
+                typeStr + " " + action + " IN from: " + new File(srcPath).getParent(), "\uf0c5", false);
         }
     }
     
@@ -1254,22 +1492,33 @@ public class MainActivity extends Activity {
                 int successCount = 0;
                 try {
                     for (FileItem item : clipboardFiles) {
+                        boolean success = false;
+                        String destPath = null;
+
                         if (item.isSaf) {
-                            // SAF Source
                             if (destFileDir != null) {
-                                successCount += copySafToFile(item.docFile, destFileDir) ? 1 : 0;
+                                success = copySafToFile(item.docFile, destFileDir);
+                                destPath = new File(destFileDir, item.name).getAbsolutePath();
                             } else if (destSafDir != null) {
-                                successCount += copySafToSaf(item.docFile, destSafDir) ? 1 : 0;
+                                success = copySafToSaf(item.docFile, destSafDir);
                             }
                         } else {
-                            // File Source
                             if (destFileDir != null) {
-                                successCount += copyFileToFile(item.file, new File(destFileDir, item.name)) ? 1 : 0;
+                                File targetFile = new File(destFileDir, item.name);
+                                success = copyFileToFile(item.file, targetFile);
+                                destPath = targetFile.getAbsolutePath();
                             } else if (destSafDir != null) {
-                                successCount += copyFileToSaf(item.file, destSafDir) ? 1 : 0;
+                                success = copyFileToSaf(item.file, destSafDir);
                             }
                         }
                         
+                        if (success) {
+                            successCount++;
+                            
+                            // LOG THE ACTIVITY USING THE NEW BOUNDARY HELPER
+                            logPasteAction(item, destPath, isMoveMode);
+                        }
+
                         // If move mode, delete the original
                         if (isMoveMode) {
                             if (item.isSaf) item.docFile.delete();
@@ -1562,7 +1811,7 @@ public class MainActivity extends Activity {
                 dialog.dismiss();
                 
                 final File targetDir = currentDirectory != null ? currentDirectory : Environment.getExternalStorageDirectory();
-                String repoName = url.substring(url.lastIndexOf("/") + 1).replace(".git", "");
+                final String repoName = url.substring(url.lastIndexOf("/") + 1).replace(".git", "");
                 final File destination = new File(targetDir, repoName);
 
                 if (destination.exists()) {
@@ -1586,6 +1835,30 @@ public class MainActivity extends Activity {
                             public void run() {
                                 if (result.startsWith("Success")) {
                                     AppToast.showSuccess(MainActivity.this, "Cloned successfully!");
+                                    
+                                    // ==========================================
+                                    // LOG CLONE ACTIVITY
+                                    // ==========================================
+                                    String platform = "Git";
+                                    String lowerUrl = url.toLowerCase();
+                                    if (lowerUrl.contains("github.com")) {
+                                        platform = "GitHub";
+                                    } else if (lowerUrl.contains("gitlab.com")) {
+                                        platform = "GitLab";
+                                    } else if (lowerUrl.contains("bitbucket.org")) {
+                                        platform = "Bitbucket";
+                                    }
+                                    
+                                    RecentActivityManager.log(
+                                        MainActivity.this,
+                                        destination.getAbsolutePath(),
+                                        "git_clone",
+                                        "Cloned from " + platform + ": " + repoName,
+                                        "\uf09b", // Git brand icon
+                                        true
+                                    );
+                                    // ==========================================
+                                    
                                     loadDirectory(targetDir);
                                 } else {
                                     AppToast.showError(MainActivity.this, result);
@@ -1659,6 +1932,15 @@ public class MainActivity extends Activity {
                     hasFolder = true;
                 }
                 selectedExt = item.ext.toLowerCase(); 
+            }
+            if (item.isSaf) {
+                filesAddAsProjectBtn.setClickable(false);
+                filesAddAsProjectBtn.setFocusable(false);
+                filesAddAsProjectBtn.setTextColor(Color.parseColor("#888888"));
+            } else {
+                filesAddAsProjectBtn.setClickable(true);
+                filesAddAsProjectBtn.setFocusable(true);
+                filesAddAsProjectBtn.setTextColor(Color.parseColor("#FFFFFF"));
             }
         }
 
@@ -1955,9 +2237,33 @@ public class MainActivity extends Activity {
                     AppToast.showSuccess(MainActivity.this, "Folder name cannot be empty.");
                     return;
                 }
+                
                 File newFolder = new File(currentDirectory, folderName);
                 if (newFolder.mkdir()) {
                     AppToast.showSuccess(MainActivity.this, "Created: " + folderName);
+                    
+                    // ==========================================
+                    // LOG FOLDER CREATION TO PROJECT DASHBOARD
+                    // ==========================================
+                    String newFolderPath = newFolder.getAbsolutePath();
+                    ArrayList<ProjectItem> allProjects = ProjectManager.loadProjects(MainActivity.this);
+                    
+                    for (int i = 0; i < allProjects.size(); i++) {
+                        ProjectItem p = allProjects.get(i);
+                        if (newFolderPath.startsWith(p.path)) {
+                            RecentActivityManager.log(
+                                MainActivity.this,
+                                p.path,
+                                "folder_created",
+                                "Folder created: " + folderName,
+                                "\uf07b", // FontAwesome folder solid icon
+                                false
+                            );
+                            break;
+                        }
+                    }
+                    // ==========================================
+                
                     loadDirectory(currentDirectory); 
                 } else {
                     AppToast.showSuccess(MainActivity.this, "Folder already exists!");
@@ -1983,10 +2289,35 @@ public class MainActivity extends Activity {
                     AppToast.showSuccess(MainActivity.this, "File name cannot be empty.");
                     return;
                 }
+                
                 File newFile = new File(currentDirectory, fileName);
                 try {
                     if (newFile.createNewFile()) {
                         AppToast.showSuccess(MainActivity.this, "Created: " + fileName);
+                        
+                        // ==========================================
+                        // LOG FILE CREATION TO PROJECT DASHBOARD
+                        // ==========================================
+                        String newFilePath = newFile.getAbsolutePath();
+                        ArrayList<ProjectItem> allProjects = ProjectManager.loadProjects(MainActivity.this);
+                        
+                        for (int i = 0; i < allProjects.size(); i++) {
+                            ProjectItem p = allProjects.get(i);
+                            // Check if this new file is inside a registered project
+                            if (newFilePath.startsWith(p.path)) {
+                                RecentActivityManager.log(
+                                    MainActivity.this,
+                                    p.path,
+                                    "file_created",
+                                    "File created: " + fileName,
+                                    "\uf15b", // FontAwesome file solid icon
+                                    false
+                                );
+                                break; // Found the project, stop looping
+                            }
+                        }
+                        // ==========================================
+                
                         loadDirectory(currentDirectory); 
                     } else {
                         AppToast.showSuccess(MainActivity.this, "File already exists!");
@@ -2012,31 +2343,72 @@ public class MainActivity extends Activity {
     }
     
     private void showRenameDialog(final FileItem item) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setTitle("Rename");
-        final EditText input = new EditText(MainActivity.this);
+        // 1. Inflate the custom XML layout
+        android.view.LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_rename_input, null);
+        
+        // 2. Find the EditText and set the current name
+        final EditText input = dialogView.findViewById(R.id.dialog_rename_input);
         input.setText(item.name);
         input.setSelection(input.getText().length());
-        input.setPadding(40, 40, 40, 40); 
-        builder.setView(input);
-        builder.setPositiveButton("Rename", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String newName = input.getText().toString().trim();
-                if (newName.isEmpty()) { AppToast.showSuccess(MainActivity.this, "Name cannot be empty."); return; }
-                if (newName.equals(item.name)) return;
-                File newFile = new File(currentDirectory, newName);
-                if (item.file.renameTo(newFile)) {
-                    AppToast.showSuccess(MainActivity.this, "Renamed successfully!");
-                    exitSelectionMode();
-                    loadDirectory(currentDirectory); 
-                } else {
-                    AppToast.showSuccess(MainActivity.this, "Rename failed. File might already exist.");
+
+        // 3. Show the AppDialog with the custom view
+        AppDialog.show(
+            MainActivity.this,
+            "Rename",
+            "Enter a new name for this item.",
+            dialogView,
+            "RENAME",
+            "CANCEL",
+            new AppDialog.OnDialogClickListener() {
+                @Override
+                public void onClick() {
+                    String newName = input.getText().toString().trim();
+                    
+                    if (newName.isEmpty()) {
+                        AppToast.showError(MainActivity.this, "Name cannot be empty.");
+                        return;
+                    }
+                    if (newName.equals(item.name)) {
+                        return; // No change
+                    }
+
+                    // --- SAF LOGIC ---
+                    if (item.isSaf) {
+                        if (item.docFile.renameTo(newName)) {
+                            AppToast.showSuccess(MainActivity.this, "Renamed successfully!");
+                            exitSelectionMode();
+                            // Refresh the SAF directory
+                            if (!safHistory.isEmpty()) {
+                                loadSafDirectory(safHistory.get(safHistory.size() - 1));
+                            }
+                        } else {
+                            AppToast.showError(MainActivity.this, "Rename failed. The provider might not allow this.");
+                        }
+                        return;
+                    }
+
+                    // --- NORMAL FILE LOGIC ---
+                    if (currentDirectory == null) return;
+                    
+                    File newFile = new File(currentDirectory, newName);
+                    
+                    if (item.file.renameTo(newFile)) {
+                        AppToast.showSuccess(MainActivity.this, "Renamed successfully!");
+                        
+                        // LOG THE ACTIVITY
+                        String typeStr = item.isDir ? "Folder" : "File";
+                        logProjectActivity(newFile.getAbsolutePath(), "rename", typeStr + " renamed: " + item.name + " -> " + newName, "\uf044");
+                        
+                        exitSelectionMode();
+                        loadDirectory(currentDirectory); 
+                    } else {
+                        AppToast.showError(MainActivity.this, "Rename failed. File might already exist.");
+                    }
                 }
-            }
-        });
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
+            },
+            null
+        );
     }
     
     private void showDeleteDialog(final FileItem item) {
@@ -2063,47 +2435,67 @@ public class MainActivity extends Activity {
         for (FileItem item : fileList) {
             if (item.isSelected) selectedFiles.add(item);
         }
-
+    
         if (selectedFiles.isEmpty()) return;
     
-        File zipFile = new File(currentDirectory, "archive.zip");
-        int count = 1;
-        while (zipFile.exists()) {
-            zipFile = new File(currentDirectory, "archive(" + count + ").zip");
-            count++;
-        }
-        final File finalZipFile = zipFile;
-
-        AppToast.showSuccess(MainActivity.this, "Compressing... Please wait.");
-
+        AppLoader.show(this, "Compressing...");
+    
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    FileOutputStream fos = new FileOutputStream(finalZipFile);
-                    ZipOutputStream zos = new ZipOutputStream(fos);
-
-                    for (FileItem item : selectedFiles) {
-                        zipFile(item.file, item.name, zos);
+                    ZipOutputStream zos;
+                    File finalNormalZip = null;
+                    String finalZipName = "";
+    
+                    // --- 1. Create Destination Zip File ---
+                    if (currentDirectory != null) {
+                        // Normal Destination
+                        finalNormalZip = new File(currentDirectory, "archive.zip");
+                        int count = 1;
+                        while (finalNormalZip.exists()) {
+                            finalNormalZip = new File(currentDirectory, "archive(" + count + ").zip");
+                            count++;
+                        }
+                        finalZipName = finalNormalZip.getName();
+                        zos = new ZipOutputStream(new FileOutputStream(finalNormalZip));
+                    } else {
+                        // SAF Destination
+                        android.support.v4.provider.DocumentFile destSafDir = safHistory.get(safHistory.size() - 1);
+                        android.support.v4.provider.DocumentFile zipDoc = destSafDir.createFile("application/zip", "archive.zip");
+                        finalZipName = zipDoc.getName();
+                        zos = new ZipOutputStream(getContentResolver().openOutputStream(zipDoc.getUri()));
                     }
-
+    
+                    // --- 2. Add files to Zip ---
+                    for (FileItem item : selectedFiles) {
+                        if (item.isSaf) {
+                            zipSafFile(item.docFile, item.name, zos);
+                        } else {
+                            zipNormalFile(item.file, item.name, zos);
+                        }
+                    }
                     zos.close();
-                    fos.close();
-
+    
+                    // --- 3. Update UI ---
+                    final String finalZipNameCopy = finalZipName;
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            AppToast.showSuccess(MainActivity.this, "Compressed successfully to " + finalZipFile.getName());
+                            AppLoader.hide();
+                            AppDialog.show(MainActivity.this, "Compressed", "Successfully created " + finalZipNameCopy, "OK", "", null, null);
                             exitSelectionMode();
-                            loadDirectory(currentDirectory);
+                            if (currentDirectory != null) loadDirectory(currentDirectory);
+                            else if (!safHistory.isEmpty()) loadSafDirectory(safHistory.get(safHistory.size() - 1));
                         }
                     });
-
-                } catch (Exception e) {
+    
+                } catch (final Exception e) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            AppToast.showSuccess(MainActivity.this, "Compression failed!");
+                            AppLoader.hide();
+                            AppDialog.show(MainActivity.this, "Failed", "Compression failed: " + e.getMessage(), "OK", "", null, null);
                         }
                     });
                 }
@@ -2111,10 +2503,9 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    private void zipFile(File fileToZip, String fileName, ZipOutputStream zipOut) throws Exception {
-        if (fileToZip.isHidden()) {
-            return;
-        }
+    private void zipNormalFile(File fileToZip, String fileName, ZipOutputStream zipOut) throws Exception {
+        if (fileToZip.isHidden()) return;
+        
         if (fileToZip.isDirectory()) {
             if (fileName.endsWith("/")) {
                 zipOut.putNextEntry(new ZipEntry(fileName));
@@ -2125,23 +2516,54 @@ public class MainActivity extends Activity {
             File[] children = fileToZip.listFiles();
             if (children != null) {
                 for (File childFile : children) {
-                    zipFile(childFile, fileName + "/" + childFile.getName(), zipOut);
+                    zipNormalFile(childFile, fileName + "/" + childFile.getName(), zipOut);
                 }
             }
             return;
         }
-    
+        
         FileInputStream fis = new FileInputStream(fileToZip);
         ZipEntry zipEntry = new ZipEntry(fileName);
         zipOut.putNextEntry(zipEntry);
-    
-        byte[] bytes = new byte[1024];
+        
+        byte[] bytes = new byte[4096];
         int length;
         while ((length = fis.read(bytes)) >= 0) {
             zipOut.write(bytes, 0, length);
         }
-    
         fis.close();
+        zipOut.closeEntry();
+    }
+    
+    private void zipSafFile(android.support.v4.provider.DocumentFile docFile, String fileName, ZipOutputStream zipOut) throws Exception {
+        if (docFile.isDirectory()) {
+            if (fileName.endsWith("/")) {
+                zipOut.putNextEntry(new ZipEntry(fileName));
+            } else {
+                zipOut.putNextEntry(new ZipEntry(fileName + "/"));
+            }
+            zipOut.closeEntry();
+            
+            android.support.v4.provider.DocumentFile[] children = docFile.listFiles();
+            if (children != null) {
+                for (android.support.v4.provider.DocumentFile child : children) {
+                    zipSafFile(child, fileName + "/" + child.getName(), zipOut);
+                }
+            }
+            return;
+        }
+        
+        InputStream is = getContentResolver().openInputStream(docFile.getUri());
+        ZipEntry zipEntry = new ZipEntry(fileName);
+        zipOut.putNextEntry(zipEntry);
+        
+        byte[] bytes = new byte[4096];
+        int length;
+        while ((length = is.read(bytes)) >= 0) {
+            zipOut.write(bytes, 0, length);
+        }
+        is.close();
+        zipOut.closeEntry();
     }
     
     private void uncompressSelectedFile() {
@@ -2152,38 +2574,54 @@ public class MainActivity extends Activity {
                 break;
             }
         }
-
-        if (selectedItem == null || selectedItem.isDir) return;
-
-        final File zipFile = selectedItem.file;
     
-        if (!zipFile.getName().toLowerCase().endsWith(".zip")) {
+        if (selectedItem == null || selectedItem.isDir) return;
+    
+        if (!selectedItem.name.toLowerCase().endsWith(".zip")) {
             AppToast.showSuccess(MainActivity.this, "Only .zip files are supported for extraction.");
             return;
         }
     
-        AppToast.showSuccess(MainActivity.this, "Uncompressing... Please wait.");
-
+        final FileItem finalItem = selectedItem;
+        AppLoader.show(this, "Uncompressing...");
+    
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    unzipFile(zipFile, currentDirectory);
-                
+                    InputStream is;
+                    if (finalItem.isSaf) {
+                        is = getContentResolver().openInputStream(finalItem.docFile.getUri());
+                    } else {
+                        is = new FileInputStream(finalItem.file);
+                    }
+    
+                    if (currentDirectory != null) {
+                        // Normal Target
+                        unzipStream(is, currentDirectory, null);
+                    } else {
+                        // SAF Target
+                        android.support.v4.provider.DocumentFile targetSafDir = safHistory.get(safHistory.size() - 1);
+                        unzipStream(is, null, targetSafDir);
+                    }
+                    is.close();
+    
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            AppToast.showSuccess(MainActivity.this, "Uncompressed successfully!");
+                            AppLoader.hide();
+                            AppDialog.show(MainActivity.this, "Uncompressed", "Successfully extracted files.", "OK", "", null, null);
                             exitSelectionMode();
-                            loadDirectory(currentDirectory);
+                            if (currentDirectory != null) loadDirectory(currentDirectory);
+                            else if (!safHistory.isEmpty()) loadSafDirectory(safHistory.get(safHistory.size() - 1));
                         }
                     });
-
                 } catch (final Exception e) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            AppToast.showSuccess(MainActivity.this, "Failed to uncompress: " + e.getMessage());
+                            AppLoader.hide();
+                            AppDialog.show(MainActivity.this, "Failed", "Error: " + e.getMessage(), "OK", "", null, null);
                         }
                     });
                 }
@@ -2191,61 +2629,126 @@ public class MainActivity extends Activity {
         }).start();
     }
     
-    private void unzipFile(File zipFile, File targetDirectory) throws Exception {
-        InputStream is = new FileInputStream(zipFile);
+    private void unzipStream(InputStream is, File normalDir, android.support.v4.provider.DocumentFile safDir) throws Exception {
         ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
         ZipEntry ze;
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[8192];
         int count;
-
+    
         while ((ze = zis.getNextEntry()) != null) {
-            File file = new File(targetDirectory, ze.getName());
-            File dir = ze.isDirectory() ? file : file.getParentFile();
-        
-            if (!dir.isDirectory() && !dir.mkdirs()) {
-                throw new Exception("Failed to ensure directory: " + dir.getAbsolutePath());
+            String entryName = ze.getName();
+            
+            if (normalDir != null) {
+                // --- NORMAL FILE EXTRACTION ---
+                File file = new File(normalDir, entryName);
+                File dir = ze.isDirectory() ? file : file.getParentFile();
+                if (!dir.isDirectory() && !dir.mkdirs()) {
+                    throw new Exception("Failed to ensure directory: " + dir.getAbsolutePath());
+                }
+                if (!ze.isDirectory()) {
+                    FileOutputStream fout = new FileOutputStream(file);
+                    BufferedOutputStream bos = new BufferedOutputStream(fout, 1024);
+                    while ((count = zis.read(buffer)) != -1) bos.write(buffer, 0, count);
+                    bos.flush(); bos.close(); fout.close();
+                }
+            } else if (safDir != null) {
+                // --- SAF EXTRACTION ---
+                String[] parts = entryName.split("/");
+                android.support.v4.provider.DocumentFile current = safDir;
+                
+                // Traverse and create directories if needed
+                for (int i = 0; i < parts.length - 1; i++) {
+                    if (parts[i].isEmpty()) continue; 
+                    android.support.v4.provider.DocumentFile next = findOrCreateSafDir(current, parts[i]);
+                    if (next != null) current = next;
+                }
+                
+                if (!ze.isDirectory()) {
+                    String fileName = parts[parts.length - 1];
+                    if (fileName.isEmpty()) continue;
+                    
+                    // Delete existing file if it exists to overwrite safely
+                    android.support.v4.provider.DocumentFile existingFile = findSafChild(current, fileName);
+                    if (existingFile != null) existingFile.delete();
+                    
+                    android.support.v4.provider.DocumentFile newFile = current.createFile("application/octet-stream", fileName);
+                    if (newFile != null) {
+                        OutputStream os = getContentResolver().openOutputStream(newFile.getUri());
+                        while ((count = zis.read(buffer)) != -1) os.write(buffer, 0, count);
+                        os.close();
+                    }
+                }
             }
-        
-            if (ze.isDirectory()) {
-                continue;
-            }
-        
-            FileOutputStream fout = new FileOutputStream(file);
-            BufferedOutputStream bos = new BufferedOutputStream(fout, 1024);
-        
-            while ((count = zis.read(buffer)) != -1) {
-                bos.write(buffer, 0, count);
-            }
-        
-            bos.flush();
-            bos.close();
-            fout.close();
         }
         zis.close();
-        is.close();
+    }
+    
+    private android.support.v4.provider.DocumentFile findOrCreateSafDir(android.support.v4.provider.DocumentFile parent, String dirName) {
+        android.support.v4.provider.DocumentFile[] children = parent.listFiles();
+        if (children != null) {
+            for (android.support.v4.provider.DocumentFile child : children) {
+                if (dirName.equals(child.getName()) && child.isDirectory()) return child;
+            }
+        }
+        return parent.createDirectory(dirName);
+    }
+    
+    private android.support.v4.provider.DocumentFile findSafChild(android.support.v4.provider.DocumentFile parent, String name) {
+        android.support.v4.provider.DocumentFile[] children = parent.listFiles();
+        if (children != null) {
+            for (android.support.v4.provider.DocumentFile child : children) {
+                if (name.equals(child.getName())) return child;
+            }
+        }
+        return null;
     }
     
     private void showDetailsDialog(FileItem item) {
+        String dateString;
+        String sizeString;
+        String typeString;
+        String pathString;
+
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault());
-        String dateString = sdf.format(new Date(item.file.lastModified()));
+        
+        if (item.isSaf) {
+            // --- SAF LOGIC ---
+            dateString = sdf.format(new Date(item.docFile.lastModified()));
+            // We use the cached size from FileItem to avoid locking the UI
+            sizeString = item.isDir ? "Folder" : formatSize(item.size);
+            typeString = item.isDir ? "Folder" : (item.ext.toUpperCase() + " File");
+            pathString = item.docFile.getUri().toString();
+        } else {
+            // --- NORMAL FILE LOGIC ---
+            dateString = sdf.format(new Date(item.file.lastModified()));
+            long sizeInBytes = item.isDir ? getFolderSize(item.file) : item.file.length();
+            sizeString = formatSize(sizeInBytes);
+            typeString = item.isDir ? "Folder" : (item.ext.toUpperCase() + " File");
+            pathString = item.file.getAbsolutePath();
+        }
 
-        long sizeInBytes = item.isDir ? getFolderSize(item.file) : item.file.length();
-        String sizeString = formatSize(sizeInBytes);
+        // Inflate the custom XML layout
+        android.view.LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_file_details, null);
 
-        String typeString = item.isDir ? "Folder" : item.ext.toUpperCase() + " File";
+        // Populate the TextViews
+        ((TextView) dialogView.findViewById(R.id.detail_name)).setText(item.name);
+        ((TextView) dialogView.findViewById(R.id.detail_type)).setText(typeString);
+        ((TextView) dialogView.findViewById(R.id.detail_size)).setText(sizeString);
+        ((TextView) dialogView.findViewById(R.id.detail_date)).setText(dateString);
+        ((TextView) dialogView.findViewById(R.id.detail_path)).setText(pathString);
 
-        String details = 
-                "Name:\n" + item.name + "\n\n" +
-                "Type:\n" + typeString + "\n\n" +
-                "Size:\n" + sizeString + "\n\n" +
-                "Last Modified:\n" + dateString + "\n\n" +
-                "Path:\n" + item.file.getAbsolutePath();
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setTitle("File Details");
-        builder.setMessage(details);
-        builder.setPositiveButton("OK", null);
-        builder.show();
+        // Show it using your AppDialog
+        AppDialog.show(
+            MainActivity.this,
+            "File Details",
+            "Information about this item.",
+            dialogView,
+            "OK",
+            "", 
+            null,
+            null
+        );
     }
 
     private long getFolderSize(File dir) {
