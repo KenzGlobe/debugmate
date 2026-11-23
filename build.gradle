@@ -1,21 +1,19 @@
-// Top-level build file
+// Top-level build file for DebugMate
 
 buildscript {
     repositories {
+        google()
         jcenter()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.+'
+        classpath 'com.android.tools.build:gradle:3.5.4'
     }
 }
 
 allprojects {
     repositories {
-        maven {
-            url 'https://maven.google.com'
-        }
-
+        google()
         jcenter()
     }
 }
