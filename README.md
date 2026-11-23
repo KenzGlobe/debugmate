@@ -25,23 +25,29 @@ additional developer tools in one application.
 
 ## Screenshots
 
-*Screenshots will be added soon.*
+### Home Screen
+![Home Screen](screenshots/home.png)
 
-  Home Screen              Project Management
-  ------------------------ ----------------------------
-  `![Home Screen](screenshots/home.png)`   `![Projects Screen](screenshots/projects.png)`
+### Project Management
+![Project Management](screenshots/projects.png)
 
-  Code Editor                File Manager
-  -------------------------- --------------------------------
-  `![Editor Screen](screenshots/editor.png)`   `![File Manager](screenshots/file-manager.png)`
+### Code Editor
+![Code Editor](screenshots/editor.png)
 
-  Project Dashboard                     Learning Hub
-  ------------------------------------- --------------------------------
-  `![Project Dashboard](screenshots/project-dashboard.png)`   `![Learning Hub](screenshots/learning-hub.png)`
+### File Manager
+![File Manager](screenshots/file-manager.png)
 
-  Terminal                     Editor Settings
-  ---------------------------- ----------------------------
-  `![Terminal Screen](screenshots/terminal.png)`   `![Settings Screen](screenshots/settings.png)`
+### Project Dashboard
+![Project Dashboard](screenshots/project-dashboard.png)
+
+### Learning Hub
+![Learning Hub](screenshots/learning-hub.png)
+
+### Terminal
+![Terminal](screenshots/terminal.png)
+
+### Editor Settings
+![Editor Settings](screenshots/settings.png)
 
 ## Features
 
