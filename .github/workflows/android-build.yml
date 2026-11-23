@@ -15,7 +15,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # Current Android command-line tools require JDK 17+
+      # Android command-line tools require a modern JDK.
       - name: Set up Java 17 for Android SDK tools
         uses: actions/setup-java@v4
         with:
@@ -23,14 +23,15 @@ jobs:
           java-version: '17'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
 
       - name: Install project Android SDK components
         run: |
           sdkmanager "platforms;android-21" "build-tools;21.1.0" "extras;android;m2repository"
 
-      # This project uses Android Gradle Plugin 1.x / Gradle 2.14.1,
-      # which must run on Java 8 rather than the current JDK.
+      # The repository uses Android Gradle Plugin 1.x and Gradle 2.14.1.
       - name: Switch to Java 8 for legacy Android Gradle build
         uses: actions/setup-java@v4
         with:
